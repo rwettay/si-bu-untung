@@ -80,7 +80,7 @@
 
     <div class="right">
       <div class="card-login">
-        <h3>Login</h3>
+        <h1>Login</h1>
 
         @if(session('success'))
           <div style="background:#e9f7ef;padding:10px 12px;border-radius:8px;margin-bottom:10px">{{ session('success') }}</div>
