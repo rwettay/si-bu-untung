@@ -19,8 +19,12 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
+    if (!session()->has('staff_id')) {
+        return redirect('/login');
+    }
     return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+})->name('dashboard');
+
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -28,4 +32,13 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+use App\Http\Controllers\StaffController;
+
+Route::get('/login', [StaffController::class, 'showLoginForm'])->name('login.form');
+Route::post('/login', [StaffController::class, 'login'])->name('login');
+Route::get('/logout', [StaffController::class, 'logout'])->name('logout');
+
+
 require __DIR__.'/auth.php';
+
+
