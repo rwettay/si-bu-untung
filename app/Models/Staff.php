@@ -2,22 +2,31 @@
 
 namespace App\Models;
 
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Filament\Models\Contracts\FilamentUser;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 
-class Staff extends Model
+
+class Staff extends Authenticatable implements FilamentUser
 {
-    use HasFactory;
+    use HasFactory, Notifiable;
 
     protected $table = 'staff';
     protected $primaryKey = 'id_staff';
-    public $incrementing = false; // karena id_staff bukan auto increment
+    public $incrementing = false;
     protected $keyType = 'string';
 
-    protected $fillable = [
-        'id_staff',
-        'username',
-        'password',
-        'role',
-    ];
+    protected $fillable = ['id_staff','username','email','password','role'];
+    protected $hidden = ['password'];
+
+    public function canAccessFilament(): bool
+    {
+        return in_array($this->role, ['owner','manager','karyawan']);
+    }
+
+    public function getNameAttribute(): string
+    {
+        return $this->username ?? $this->email ?? 'Staff';
+    }
 }

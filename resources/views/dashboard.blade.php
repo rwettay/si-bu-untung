@@ -1,17 +1,31 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Dashboard') }}
-        </h2>
-    </x-slot>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body style="font-family: 'Poppins', sans-serif;">
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900">
-                    {{ __("You're logged in!") }}
-                </div>
-            </div>
+    <header style="background-color: #f0592b; padding: 20px; color: white;">
+        <h1>Welcome to the Dashboard</h1>
+    </header>
+
+    <main style="padding: 20px;">
+        <h2>Hello, {{ session('staff_username') }}!</h2> <!-- Tampilkan nama pengguna yang login -->
+        <p>Welcome to your dashboard.</p>
+
+        <div>
+            <p>Role: {{ session('staff_role') }}</p> <!-- Menampilkan role user -->
         </div>
-    </div>
-</x-app-layout>
+
+        <!-- Kamu bisa menambahkan konten lebih lanjut di sini -->
+    </main>
+
+    <footer style="background-color: #f0592b; padding: 10px; color: white; text-align: center;">
+        <p>© 2025 Toko Bu Untung</p>
+    </footer>
+
+</body>
+</html>

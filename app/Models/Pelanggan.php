@@ -17,14 +17,9 @@ class Pelanggan extends Model
     public $incrementing = false;
     protected $keyType = 'string';
 
-    protected $fillable = [
-        'id_pelanggan',
-        'nama_pelanggan',
-        'alamat',
-        'no_hp',
-        'username',
-        'password',
-    ];
+protected $fillable = [
+  'id_pelanggan','nama_pelanggan','alamat','no_hp','username','email','password',
+];
 
     protected $hidden = ['password'];
 

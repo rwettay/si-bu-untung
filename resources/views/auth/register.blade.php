@@ -50,7 +50,6 @@
       <div class="card">
         <h1>Daftar</h1>
 
-        {{-- Notifikasi umum --}}
         @if(session('success'))
           <div style="background:#e9f7ef;padding:10px 12px;border-radius:8px;margin-bottom:10px">{{ session('success') }}</div>
         @endif
@@ -82,9 +81,17 @@
           </div>
 
           <div class="row">
+            <label for="username">Username</label>
+            <input id="username" class="ctrl @error('username') is-invalid @enderror"
+                   type="text" name="username" placeholder="username_anda"
+                   value="{{ old('username') }}" required autocomplete="username">
+            @error('username') <div class="error-text">{{ $message }}</div> @enderror
+          </div>
+
+          <div class="row">
             <label for="email">Email</label>
             <input id="email" class="ctrl @error('email') is-invalid @enderror"
-                   type="text" name="email" placeholder="emailanda@gmail.com"
+                   type="email" name="email" placeholder="emailanda@gmail.com"
                    value="{{ old('email') }}" required autocomplete="email">
             @error('email') <div class="error-text">{{ $message }}</div> @enderror
           </div>
@@ -122,7 +129,6 @@
   <div class="bar bar-bottom"></div>
 
   <script>
-    // Toggle password show/hide + swap icon
     const pwd  = document.getElementById('pwd');
     const btn  = document.getElementById('togglePwd');
     const icon = document.getElementById('eyeIcon');
@@ -135,7 +141,7 @@
       btn.setAttribute('aria-pressed', visible ? 'true' : 'false');
       btn.setAttribute('aria-label', visible ? 'Sembunyikan sandi' : 'Tampilkan sandi');
     }
-    if (btn) btn.addEventListener('click', ()=>{ visible=!visible; applyState(); });
+    btn?.addEventListener('click', ()=>{ visible=!visible; applyState(); });
     applyState();
   </script>
 </body>
