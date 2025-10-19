@@ -2,47 +2,69 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\AuthController; // Controller untuk login gabungan
-use App\Http\Controllers\PelangganAuthController; // Controller untuk register pelanggan
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\PelangganAuthController;
 
 /*
-|----------------------------------------------------------------------
+|--------------------------------------------------------------------------
 | Web Routes
-|----------------------------------------------------------------------
+|--------------------------------------------------------------------------
 */
 
-Route::get('/', fn() => view('welcome'));
+Route::get('/', fn () => view('welcome'));
 
-/* Dashboard Staff (Admin Panel) */
-Route::get('/dashboard', function () {
-    // Pastikan hanya staff yang bisa mengakses dashboard admin
-    if (!session()->has('staff_id')) return redirect('/login');
-    return view('dashboard');  // Dashboard Admin (Filament)
-})->name('dashboard');
+// =============================
+// DASHBOARD (STAFF SAJA)
+// =============================
+Route::middleware('auth:staff')->group(function () {
+    Route::get('/dashboard', function () {
+        // View untuk staf (pastikan file ini ada)
+        return view('dashboard'); // resources/views/dashboard.blade.php
+    })->name('dashboard');
+});
 
-/* Dashboard Pelanggan (Dashboard Katalog) */
-Route::get('/pelanggan/dashboard', function () {
-    // Pastikan hanya pelanggan yang bisa mengakses dashboard katalog
-    if (!session()->has('pelanggan_id')) return redirect('/login');
-    return view('pelanggan.dashboard');  // Dashboard Pelanggan (Katalog)
-})->name('pelanggan.dashboard');
+// =============================
+// HOME (PELANGGAN / USERS SAJA)
+// =============================
+Route::middleware('auth:pelanggan')->group(function () {
+    Route::get('/home', function () {
+        // Pakai view pelanggan/dashboard yang sudah ada
+        // Jika kamu punya home.blade.php sendiri, ganti ke: return view('home');
+        return view('pelanggan.dashboard'); // resources/views/pelanggan/dashboard.blade.php
+    })->name('home');
+});
 
-/* Profil Pengguna (Opsional, jika menggunakan Laravel Profile) */
+// =============================
+// PROFIL (opsional; guard default mengikuti config/auth.php)
+// =============================
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-/* ===== LOGIN GABUNGAN (Semua Aktor Lewat /login) ===== */
-Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login.form'); // Form login
-Route::post('/login', [AuthController::class, 'login'])->name('login'); // Proses login
-Route::get('/logout', [AuthController::class, 'logout'])->name('logout'); // Logout
+// =============================
+// LOGIN / LOGOUT (AuthController)
+// =============================
 
-/* ===== REGISTER PELANGGAN ===== */
-Route::get('/pelanggan/register', [PelangganAuthController::class, 'showRegisterForm'])->name('pelanggan.register'); // Form register pelanggan
-Route::post('/pelanggan/register', [PelangganAuthController::class, 'register'])->name('pelanggan.register.store'); // Proses register pelanggan
+// Form login
+Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login.form');
 
-/* Paket Auth Bawaan Laravel (Jika Tidak Bentrok Dengan /login, Bisa Dihapus) */
-require __DIR__.'/auth.php';
+// Proses login (AuthController akan arahkan: staff -> /dashboard, pelanggan -> /home)
+Route::post('/login', [AuthController::class, 'login'])->name('login');
 
+// Logout (keluar dari guard staff/pelanggan)
+Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// =============================
+// REGISTER PELANGGAN
+// =============================
+Route::get('/pelanggan/register', [PelangganAuthController::class, 'showRegisterForm'])
+    ->name('pelanggan.register');
+
+Route::post('/pelanggan/register', [PelangganAuthController::class, 'register'])
+    ->name('pelanggan.register.store');
+
+// Jika masih butuh route bawaan Laravel, biarkan baris ini.
+// Kalau bentrok dengan /login custom kamu, boleh dihapus.
+// require __DIR__ . '/auth.php';
