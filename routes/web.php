@@ -6,11 +6,13 @@ use App\Http\Controllers\PelangganAuthController;
 use App\Http\Controllers\CustomerHomeController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\BarangController;
+use App\Models\Barang;
 
 /*
-|-------------------------------------------------------------------------- 
-| Web Routes 
-|-------------------------------------------------------------------------- 
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
 */
 
 Route::get('/', fn () => view('welcome'))->name('welcome');
@@ -27,24 +29,53 @@ Route::post('/pelanggan/register', [PelangganAuthController::class, 'register'])
     ->name('pelanggan.register.store');
 
 /* ===================== STAFF / ADMIN ===================== */
-Route::middleware(['auth:staff'])->group(function () {
+Route::middleware('auth:staff')->group(function () {
     Route::view('/dashboard', 'dashboard')->name('dashboard');
+
+    /* ====== Halaman UI sesuai sidebar (mockup) ====== */
+    // View: resources/views/barang/tambah.blade.php
+    Route::get('/tambah', function () {
+        $barang = new Barang();
+        return view('barang.tambah', compact('barang'));
+    })->name('ui.tambah');
+
+    Route::post('/barang/quick-store', [BarangController::class, 'quickStore'])
+        ->name('barang.quick.store');
+
+    // View: resources/views/barang/edit-page.blade.php
+    Route::get('/edit', [BarangController::class, 'quickEditPage'])
+        ->name('ui.edit');
+
+    Route::post('/barang/quick-update', [BarangController::class, 'quickUpdate'])
+        ->name('barang.quick.update');
+
+    // View: resources/views/barang/hapus.blade.php
+    Route::get('/hapus', function () {
+        $q = request('q');
+        $barangs = Barang::query()
+            ->when($q, function ($qq) use ($q) {
+                $qq->where('id_barang', 'like', "%{$q}%")
+                   ->orWhere('nama_barang', 'like', "%{$q}%");
+            })
+            ->orderBy('id_barang')
+            ->paginate(8)
+            ->withQueryString();
+
+        return view('barang.hapus', compact('barangs', 'q'));
+    })->name('ui.hapus');
+
+    /* ====== ROUTE RESOURCE (CRUD DB) ====== */
+    Route::resource('barang', BarangController::class)
+        // Pastikan getRouteKeyName() di model Barang mengembalikan 'id_barang' jika ingin binding by id_barang
+        ->parameters(['barang' => 'barang'])
+        ->except(['show']);
 });
 
 /* ===================== PELANGGAN ========================= */
-Route::middleware(['auth:pelanggan'])->group(function () {
+Route::middleware('auth:pelanggan')->group(function () {
     Route::get('/home', [CustomerHomeController::class, 'index'])->name('customer.home');
-    Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
 
-    // Menampilkan halaman keranjang (cart)
-    Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
-
-    // Profil pelanggan
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-
-
+    // CART khusus pelanggan
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
     Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
     Route::post('/cart/update', [CartController::class, 'update'])->name('cart.update');
@@ -53,4 +84,11 @@ Route::middleware(['auth:pelanggan'])->group(function () {
     Route::post('/cart/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
 });
 
+/* ===================== PROFIL (opsional) ================= */
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
 
+// require __DIR__ . '/auth.php'; // tetap dimatikan agar tidak bentrok dengan /login custom
