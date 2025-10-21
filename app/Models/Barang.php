@@ -11,17 +11,16 @@ class Barang extends Model
 
     protected $table = 'barang';
     protected $primaryKey = 'id_barang';
-    public $incrementing = false;   // PK string, bukan auto-increment
+    public $incrementing = false;        // PK string
     protected $keyType = 'string';
 
-    // Kolom yang boleh di-mass assign
     protected $fillable = [
         'id_barang',
         'nama_barang',
         'stok_barang',
         'harga_satuan',
         'tanggal_kedaluwarsa',
-        'gambar_url',      // <- disesuaikan dengan migrasi
+        'gambar_url',
     ];
 
     protected $casts = [
@@ -30,16 +29,30 @@ class Barang extends Model
         'stok_barang'         => 'integer',
     ];
 
-    /**
-     * Supaya implicit route-model-binding pakai id_barang,
-     * contoh: route('barang.edit', $barang) -> /barang/{id_barang}
-     */
+    // Supaya route-model binding pakai id_barang
     public function getRouteKeyName()
     {
         return 'id_barang';
     }
 
-    // Relasi contoh (opsional)
+    // ---- Opsional quality-of-life ----
+
+    /** Scope pencarian sederhana: Barang::search($q)->paginate() */
+    public function scopeSearch($query, ?string $q)
+    {
+        return $query->when($q, function ($qq) use ($q) {
+            $qq->where('id_barang', 'like', "%{$q}%")
+               ->orWhere('nama_barang', 'like', "%{$q}%");
+        });
+    }
+
+    /** Terima string kosong untuk tanggal -> simpan null (biar aman) */
+    public function setTanggalKedaluwarsaAttribute($value)
+    {
+        $this->attributes['tanggal_kedaluwarsa'] = $value ?: null;
+    }
+
+    // Relasi contoh (kalau memang dipakai)
     public function detailTransaksis()
     {
         return $this->hasMany(DetailTransaksi::class, 'id_barang', 'id_barang');
