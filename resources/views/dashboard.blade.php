@@ -82,9 +82,9 @@
           <svg class="caret" width="16" height="16" viewBox="0 0 24 24" fill="#bbb"><path d="M7 10l5 5 5-5z"/></svg>
         </a>
         <div class="submenu">
-          <a href="{{ url('/barang') }}">Data Barang</a>
-          <a href="{{ url('/kategori') }}">Kategori</a>
-          <a href="{{ url('/supplier') }}">Supplier</a>
+          <a href="{{ url('/tambah') }}">Tambah Barang</a>
+          <a href="{{ url('/edit') }}">Edit Barang</a>
+          <a href="{{ url('/hapus') }}">Hapus Barang</a>
         </div>
       </li>
 

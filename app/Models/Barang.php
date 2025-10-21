@@ -11,16 +11,17 @@ class Barang extends Model
 
     protected $table = 'barang';
     protected $primaryKey = 'id_barang';
-    public $incrementing = false;
+    public $incrementing = false;   // PK string, bukan auto-increment
     protected $keyType = 'string';
 
+    // Kolom yang boleh di-mass assign
     protected $fillable = [
         'id_barang',
         'nama_barang',
         'stok_barang',
         'harga_satuan',
         'tanggal_kedaluwarsa',
-        'gambar',
+        'gambar_url',      // <- disesuaikan dengan migrasi
     ];
 
     protected $casts = [
@@ -28,6 +29,15 @@ class Barang extends Model
         'harga_satuan'        => 'decimal:2',
         'stok_barang'         => 'integer',
     ];
+
+    /**
+     * Supaya implicit route-model-binding pakai id_barang,
+     * contoh: route('barang.edit', $barang) -> /barang/{id_barang}
+     */
+    public function getRouteKeyName()
+    {
+        return 'id_barang';
+    }
 
     // Relasi contoh (opsional)
     public function detailTransaksis()

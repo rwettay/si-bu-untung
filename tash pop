@@ -1,0 +1,64 @@
+[1mdiff --git a/database/seeders/BarangSeeder.php b/database/seeders/BarangSeeder.php[m
+[1mdeleted file mode 100644[m
+[1mindex 3f5522a..0000000[m
+[1m--- a/database/seeders/BarangSeeder.php[m
+[1m+++ /dev/null[m
+[36m@@ -1,45 +0,0 @@[m
+[31m-<?php[m
+[31m-// database/seeders/BarangSeeder.php[m
+[31m-namespace Database\Seeders;[m
+[31m-[m
+[31m-use Illuminate\Database\Seeder;[m
+[31m-use App\Models\Barang;[m
+[31m-[m
+[31m-class BarangSeeder extends Seeder[m
+[31m-{[m
+[31m-    public function run(): void[m
+[31m-    {[m
+[31m-        $items = [[m
+[31m-            // rekomendasi[m
+[31m-            ['id'=>'rkk001','nama'=>'Esse Cigarette Light Blue Rokok 20 Batang', 'harga'=>43900, 'img'=>'https://c.alfagift.id/product/1/1_A13420006575_20241004171733414_base.jpg', 'rec'=>true],[m
+[31m-            ['id'=>'rkk002','nama'=>'Marlboro Merah Rokok 20 Batang',            'harga'=>56400, 'img'=>'https://c.alfagift.id/product/1/1_A13420003316_20241004145407670_base.jpg', 'rec'=>true],[m
+[31m-            ['id'=>'rkk003','nama'=>'Wismilak Diplomat Rokok 12 Batang',         'harga'=>27100, 'img'=>'https://c.alfagift.id/product/1/1_A13420003080_20241004100845721_base.jpg', 'rec'=>true],[m
+[31m-            ['id'=>'rkk004','nama'=>'Dunhill Light Rokok 20 Batang',             'harga'=>31600, 'img'=>'https://c.alfagift.id/product/1/1_A13420004191_20241003132055552_base.jpg', 'rec'=>true],[m
+[31m-            ['id'=>'rkk005','nama'=>'Clas Mild Rokok 16 Batang',                 'harga'=>32300, 'img'=>'https://c.alfagift.id/product/1/1_A13420001761_20241004162840620_base.jpg', 'rec'=>true],[m
+[31m-            ['id'=>'rkk006','nama'=>'Aroma Slim Rokok 16 Batang',                'harga'=>15700, 'img'=>'https://c.alfagift.id/product/1/1_A6639780001022_20210510140428205_base.jpg', 'rec'=>true],[m
+[31m-[m
+[31m-            // non-rekomendasi[m
+[31m-            ['id'=>'rkk007','nama'=>'Win Bold Rokok 20 Batang',                  'harga'=>31000, 'img'=>'https://c.alfagift.id/product/1/1_A7630640001109_20241004101100265_base.jpg', 'rec'=>false],[m
+[31m-            ['id'=>'rkk008','nama'=>'Sampoerna Prima Rokok 12 Batang',           'harga'=>15000, 'img'=>'https://c.alfagift.id/product/1/1_A8155770002167_20241003110353053_base.jpg', 'rec'=>false],[m
+[31m-            ['id'=>'rkk009','nama'=>'Djarum Safari Rokok 12 Batang',             'harga'=>14000, 'img'=>'https://c.alfagift.id/product/1/1_A8248560002167_20250122163557690_base.jpg', 'rec'=>false],[m
+[31m-            ['id'=>'rkk010','nama'=>'Juara Apel Rokok 12 Batang',                'harga'=>15000, 'img'=>'https://c.alfagift.id/product/1/1_A8277370002167_20250428155000077_base.jpg', 'rec'=>false],[m
+[31m-            ['id'=>'rkk011','nama'=>'Aroma Bold Rokok 12 Batang',                'harga'=>18400, 'img'=>'https://c.alfagift.id/product/1/1_A7666220001104_202104121051410330_base.jpg', 'rec'=>false],[m
+[31m-            ['id'=>'rkk012','nama'=>'Bentoel Sejati Rokok 12 Batang',            'harga'=>10000, 'img'=>'https://c.alfagift.id/product/1/1_A8179390002167_20241003103237093_base.jpg', 'rec'=>false],[m
+[31m-        ];[m
+[31m-[m
+[31m-        foreach ($items as $i) {[m
+[31m-            Barang::updateOrCreate([m
+[31m-                ['id_barang' => $i['id']], // kunci unik[m
+[31m-                [[m
+[31m-                    'nama_barang'         => $i['nama'],[m
+[31m-                    'stok_barang'         => 100,[m
+[31m-                    'harga_satuan'        => $i['harga'],[m
+[31m-                    'gambar_url'          => $i['img'],[m
+[31m-                    'tanggal_kedaluwarsa' => null,[m
+[31m-                    'is_recommended'      => $i['rec'],[m
+[31m-                    'sold_count'          => rand(10, 60), // biar "Terlaris" tampil[m
+[31m-                ][m
+[31m-            );[m
+[31m-        }[m
+[31m-    }[m
+[31m-}[m
+[1mdiff --git a/database/seeders/DatabaseSeeder.php b/database/seeders/DatabaseSeeder.php[m
+[1mindex 4eb19e4..63922f4 100644[m
+[1m--- a/database/seeders/DatabaseSeeder.php[m
+[1m+++ b/database/seeders/DatabaseSeeder.php[m
+[36m@@ -16,8 +16,6 @@[m [mpublic function run()[m
+         // Panggil StaffSeeder untuk memasukkan data staff[m
+         $this->call([[m
+             StaffSeeder::class,[m
+[31m-            PelangganSeeder::class,[m
+[31m-            BarangSeeder::class,[m
+         ]);[m
+     }[m
+ }[m
