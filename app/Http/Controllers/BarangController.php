@@ -4,79 +4,118 @@ namespace App\Http\Controllers;
 
 use App\Models\Barang;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class BarangController extends Controller
 {
-    // List + cari
-    public function index(Request $request)
+    public function create()
     {
-        $q = $request->query('q');
-
-        $barangs = Barang::when($q, function ($qb) use ($q) {
-                $qb->where('id_barang', 'like', "%{$q}%")
-                   ->orWhere('nama_barang', 'like', "%{$q}%");
-            })
-            ->orderBy('nama_barang')
+        // pastikan SELALU ada $barangs
+        $barangs = Barang::orderBy('nama_barang')
             ->paginate(10)
             ->withQueryString();
 
-        return view('barang.index', compact('barangs', 'q'));
+        return view('barang.tambah', compact('barangs')); // <- WAJIB 'barang.tambah'
     }
 
-    // Form tambah
-    public function create()
-    {
-        return view('barang.form', ['barang' => new Barang()]);
-    }
-
-    // Simpan baru
     public function store(Request $request)
     {
         $data = $request->validate([
-            'id_barang'            => ['required','string','max:20','unique:barang,id_barang'],
-            'nama_barang'          => ['required','string'],
-            'stok_barang'          => ['required','integer','min:0'],
-            'harga_satuan'         => ['required','numeric','min:0'],
-            'gambar_url'           => ['nullable','string'],
-            'tanggal_kedaluwarsa'  => ['nullable','date'],
+            'id_barang'   => ['required','string','max:20'],
+            'stok_barang' => ['required','integer','min:1'],
         ]);
 
-        Barang::create($data);
-        return redirect()->route('barang.index')->with('success','Barang ditambahkan.');
+        $barang = Barang::where('id_barang', $data['id_barang'])->first();
+
+        if ($barang) {
+            $barang->increment('stok_barang', (int)$data['stok_barang']);
+        } else {
+            Barang::create([
+                'id_barang'           => $data['id_barang'],
+                'stok_barang'         => (int)$data['stok_barang'],
+                // kolom lain biarkan default/null
+            ]);
+        }
+
+        return back()->with('success', 'Barang berhasil ditambahkan / stok diperbarui.');
+    }
+// Halaman EDIT (list + form kilat)
+public function editPage(\Illuminate\Http\Request $request)
+{
+    $q = $request->query('q');
+    $barangs = \App\Models\Barang::when($q, fn($qb)=>$qb
+            ->where('id_barang','like',"%{$q}%")
+            ->orWhere('nama_barang','like',"%{$q}%"))
+        ->orderBy('nama_barang')
+        ->paginate(8)
+        ->withQueryString();
+
+    return view('barang.edit', compact('barangs','q'));
+}
+
+// Halaman HAPUS
+public function deletePage(\Illuminate\Http\Request $request)
+{
+    $q = $request->query('q');
+    $barangs = \App\Models\Barang::when($q, fn($qb)=>$qb
+            ->where('id_barang','like',"%{$q}%")
+            ->orWhere('nama_barang','like',"%{$q}%"))
+        ->orderBy('nama_barang')
+        ->paginate(8)
+        ->withQueryString();
+
+    return view('barang.hapus', compact('barangs','q'));
+}
+
+// Quick update (ubah salah satu kolom)
+public function quickUpdate(\Illuminate\Http\Request $request)
+{
+    $mode = $request->input('mode');           // 'change_id' | 'change_nama' | 'change_tanggal' | 'change_stok'
+    $id   = $request->input('target_id');      // id barang yang mau diubah
+
+    $barang = \App\Models\Barang::find($id);
+    if (!$barang) {
+        return back()->withErrors(['target_id' => 'Barang dengan ID tersebut tidak ditemukan.'])->withInput();
     }
 
-    // Form edit
-    public function edit(Barang $barang)
-    {
-        return view('barang.form', compact('barang'));
+    switch ($mode) {
+        case 'change_id':
+            $request->validate([
+                'new_id' => ['required','string','max:20','unique:barang,id_barang'],
+            ]);
+            // ubah PK
+            $barang->id_barang = $request->new_id;
+            $barang->save();
+            return back()->with('success', "ID barang diubah menjadi {$request->new_id}.");
+
+        case 'change_nama':
+            $request->validate(['nama_barang' => ['required','string']]);
+            $barang->nama_barang = $request->nama_barang;
+            $barang->save();
+            return back()->with('success','Nama barang diperbarui.');
+
+        case 'change_tanggal':
+            $request->validate(['tanggal_kedaluwarsa' => ['nullable','date']]);
+            $barang->tanggal_kedaluwarsa = $request->tanggal_kedaluwarsa ?: null;
+            $barang->save();
+            return back()->with('success','Tanggal kedaluwarsa diperbarui.');
+
+        case 'change_stok':
+            $request->validate(['stok_barang' => ['required','integer','min:0']]);
+            $barang->stok_barang = (int)$request->stok_barang;
+            $barang->save();
+            return back()->with('success','Stok barang diperbarui.');
+
+        default:
+            return back()->withErrors(['mode' => 'Aksi tidak dikenal.']);
     }
+}
 
-    // Update
-    public function update(Request $request, Barang $barang)
-    {
-        $data = $request->validate([
-            'id_barang'            => ['required','string','max:20', Rule::unique('barang','id_barang')->ignore($barang->id_barang, 'id_barang')],
-            'nama_barang'          => ['required','string'],
-            'stok_barang'          => ['required','integer','min:0'],
-            'harga_satuan'         => ['required','numeric','min:0'],
-            'gambar_url'           => ['nullable','string'],
-            'tanggal_kedaluwarsa'  => ['nullable','date'],
-        ]);
+// Hapus
+public function destroy(\App\Models\Barang $barang)
+{
+    $barang->delete();
+    return back()->with('success','Barang berhasil dihapus.');
+}
 
-        // Kalau id_barang boleh diubah, update PK juga:
-        $pkChanged = $data['id_barang'] !== $barang->id_barang;
-
-        $barang->update($data);
-
-        // Jika PK berubah, redirect pakai key baru
-        return redirect()->route('barang.index')->with('success','Barang diperbarui.');
-    }
-
-    // Hapus
-    public function destroy(Barang $barang)
-    {
-        $barang->delete();
-        return redirect()->route('barang.index')->with('success','Barang dihapus.');
-    }
+    // index/edit/update/destroy biarkan seperti sebelumnya…
 }

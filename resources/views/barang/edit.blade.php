@@ -1,145 +1,149 @@
-
-<x-app-layout>
-  <x-slot name="header"><span class="font-extrabold text-xl">Owner</span></x-slot>
-
-  <style>
-    /* ====== STYLE KHUSUS HALAMAN INI (match mockup) ====== */
-    .h1-title{font-weight:800;font-size:32px;line-height:1.2;text-align:center;margin:0 0 18px}
-    .search-wrap{display:flex;justify-content:center;margin-bottom:22px}
-    .search{position:relative;width:100%;max-width:560px}
-    .search input{
-      width:100%;height:40px;border:1px solid #e5e7eb;border-radius:999px;
-      padding:0 14px 0 36px;background:#fff;font:500 14px/40px 'Poppins',system-ui
-    }
-    .search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#9ca3af}
-
-    .grid-2{display:grid;grid-template-columns:1fr;gap:18px;margin-bottom:22px}
-    @media(min-width:860px){.grid-2{grid-template-columns:1fr 1fr}}
-
-    .mini{background:#fff;border:1px solid #e5e7eb;border-radius:14px;box-shadow:0 10px 25px rgba(0,0,0,.06);padding:14px}
-    .mini .label{font:600 13px/1.4 'Poppins',system-ui;color:#374151;margin-bottom:8px}
-    .mini .row{display:flex;gap:10px}
-    .mini input[type="text"], .mini input[type="date"]{
-      flex:1;border:1px solid #e5e7eb;border-radius:10px;padding:10px 12px;font:500 13px/20px 'Poppins',system-ui
-    }
-    .btn-ghost{border:0;background:#f3f4f6;border-radius:10px;padding:10px 14px;font:600 12px 'Poppins',system-ui;color:#111}
-    .hint{display:flex;align-items:center;gap:6px;margin-top:8px;font:500 11px/1.4 'Poppins',system-ui;color:#9ca3af}
-    .dot{width:8px;height:8px;border-radius:50%;background:#d1d5db;display:inline-block}
-
-    .tbl-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;box-shadow:0 10px 25px rgba(0,0,0,.06)}
-    .tbl-title{padding:16px 20px;font:600 14px 'Poppins',system-ui}
-    table{width:100%;border-collapse:collapse;font:500 13px 'Poppins',system-ui}
-    thead th{background:#f3f4f6;text-align:left;padding:10px 14px;border-bottom:1px solid #e5e7eb}
-    tbody td{padding:10px 14px;border-top:1px solid #f0f0f0}
-    tbody tr:nth-child(odd){background:#fcfcfc}
-
-    .pagination{display:flex;justify-content:center;gap:6px;padding:12px 16px}
-    .page-btn{
-      min-width:28px;height:28px;padding:0 8px;border:1px solid #e5e7eb;background:#fff;
-      border-radius:6px;font:600 12px/28px 'Poppins',system-ui;text-align:center;color:#111
-    }
-    .page-btn.is-active{background:#2563eb;color:#fff;border-color:#2563eb}
-    .page-btn.icon{font-weight:600}
-    /* lebar konten menyamai container layout */
-    .page-container{max-width:1100px;margin:0 auto}
+{{-- resources/views/barang/edit.blade.php --}}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Edit Barang</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <style>/* === style ringkas: copy dari dashboard === */
+    :root{--sidebar:#181818;--sidebar-hover:#232323;--content-bg:#f5f5f5;--card-bg:#fff;--text:#111;--muted:#777;--radius:14px;--shadow:0 10px 25px rgba(0,0,0,.06)}
+    *{box-sizing:border-box} html,body{height:100%} body{margin:0;font-family:'Poppins',system-ui,Segoe UI,Roboto,Helvetica,Arial;background:var(--content-bg);color:var(--text)}
+    .layout{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
+    .sidebar{background:var(--sidebar);color:#fff;position:sticky;top:0;height:100vh;padding:16px 0}
+    .logo{display:flex;gap:10px;align-items:center;padding:0 18px 18px;margin-bottom:8px;border-bottom:1px solid rgba(255,255,255,.06)}
+    .logo .dot{width:12px;height:12px;border-radius:4px;background:#f0592b}
+    .menu{list-style:none;margin:0;padding:8px 10px}.menu>li{margin:4px 0}
+    .menu a{display:flex;align-items:center;gap:10px;text-decoration:none;color:#ddd;padding:12px 16px;border-radius:10px}
+    .menu a:hover,.menu a.active{background:var(--sidebar-hover);color:#fff}
+    .menu .caret{margin-left:auto;transition:.2s}.submenu{display:none;padding-left:42px}.submenu a{padding:10px 12px;font-size:.92rem;color:#cfcfcf}.submenu a:hover{color:#fff}
+    .open .submenu{display:block}.open .caret{transform:rotate(180deg)}
+    .content{padding:28px 34px}.title{font-size:28px;font-weight:800}.divider{height:1px;background:#e8e8e8;margin:10px 0 24px}
+    .card{background:var(--card-bg);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
+    .heading{font-size:26px;font-weight:800;text-align:center;margin:0 0 12px}
+    .searchWrap{max-width:560px;margin:0 auto 16px;position:relative}
+    .search{width:100%;height:40px;border-radius:24px;border:1px solid #e3e3e3;background:#f2f2f2;padding:0 14px 0 36px}
+    .searchIcon{position:absolute;left:12px;top:0;height:40px;display:grid;place-items:center;color:#9aa0a6}
+    .grid2{display:grid;grid-template-columns:1fr;gap:16px}@media(min-width:900px){.grid2{grid-template-columns:1fr 1fr}}
+    .label{font-size:12px;font-weight:600;margin-bottom:6px}.input{width:100%;height:36px;border:1px solid #ddd;border-radius:8px;padding:0 10px}
+    .btn{height:36px;padding:0 12px;border-radius:8px;border:none;background:#e5e7eb;font-weight:600;cursor:pointer}.btn:hover{background:#dcdfe4}
+    .tableWrap{overflow:auto;border:1px solid #e6e6e6;border-radius:12px} table{width:100%;border-collapse:collapse;font-size:13px}
+    thead{background:#e9e9e9} th,td{padding:10px 14px;text-align:left;border-top:1px solid #efefef}
+    tbody tr:nth-child(even){background:#fafafa} tbody tr:hover{background:#f3f4f6}
+    .pagination{display:flex;gap:6px;justify-content:center;margin-top:12px}
+    .flash{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;padding:10px;border-radius:10px;margin:12px auto;max-width:560px;text-align:center}
+    .err{color:#dc2626;font-size:13px;margin-top:6px}
   </style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="logo"><span class="dot"></span><strong>SI Bu Untung</strong></div>
+    <ul class="menu">
+      <li><a href="{{ url('/dashboard') }}">Dashboard</a></li>
+      <li class="open">
+        <a href="javascript:void(0)" onclick="this.parentElement.classList.toggle('open')">Kelola Barang
+          <svg class="caret" width="16" height="16" viewBox="0 0 24 24" fill="#bbb"><path d="M7 10l5 5 5-5z"/></svg>
+        </a>
+        <div class="submenu">
+          <a href="{{ url('/tambah') }}">Tambah Barang</a>
+          <a href="{{ url('/edit') }}" style="color:#fff">Edit Barang</a>
+          <a href="{{ url('/hapus') }}">Hapus Barang</a>
+        </div>
+      </li>
+      <li><a href="{{ url('/laporan/penjualan') }}">Laporan Penjualan</a></li>
+    </ul>
+  </aside>
 
-  <div class="page-container">
-    <h1 class="h1-title">Cari barang yang ingin di edit</h1>
+  <main class="content">
+    <div class="title">Owner</div>
+    <div class="divider"></div>
 
-    {{-- Search --}}
-    <div class="search-wrap">
-      <div class="search">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M15.5 14h-.79l-.28-.27A6.5 6.5 0 1 0 14 15.5l.27.28h.79l5 5 1.5-1.5-5-5ZM10 15.5A5.5 5.5 0 1 1 10 4.5a5.5 5.5 0 0 1 0 11Z"/>
-        </svg>
-        <input type="text" placeholder="Cari Barang...">
-      </div>
+    <h1 class="heading">Cari barang yang ingin di edit</h1>
+
+    <div class="searchWrap">
+      <span class="searchIcon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#9aa0a6"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79L20 21.49 21.49 20l-5.99-6zM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+      </span>
+      <input id="searchBarang" class="search" placeholder="Cari Barang...">
     </div>
 
-    {{-- 4 kartu mini --}}
-    <div class="grid-2">
-      <div class="mini">
+    @if(session('success')) <div class="flash">{{ session('success') }}</div> @endif
+
+    <div class="grid2">
+      <div class="card">
         <div class="label">Id Barang</div>
-        <div class="row">
-          <input type="text" placeholder="Masukan Id Barang">
-          <button type="button" class="btn-ghost">Edit</button>
-        </div>
-        <div class="hint"><span class="dot"></span>Masukan Id Barang yang ingin di edit</div>
+        <form method="POST" action="{{ route('barang.quickUpdate') }}" style="display:flex;gap:8px">
+          @csrf <input type="hidden" name="mode" value="change_id">
+          <input class="input" name="target_id" placeholder="Id lama" required>
+          <input class="input" name="new_id" placeholder="Id baru" required>
+          <button class="btn">Edit</button>
+        </form>
+        @error('new_id') <div class="err">{{ $message }}</div> @enderror
       </div>
 
-      <div class="mini">
+      <div class="card">
         <div class="label">Tanggal Kadaluwarsa</div>
-        <div class="row">
-          <input type="date">
-          <button type="button" class="btn-ghost">Edit</button>
-        </div>
-        <div class="hint"><span class="dot"></span>Pilih Tanggal Kadaluwarsa yang ingin di edit</div>
+        <form method="POST" action="{{ route('barang.quickUpdate') }}" style="display:flex;gap:8px">
+          @csrf <input type="hidden" name="mode" value="change_tanggal">
+          <input class="input" name="target_id" placeholder="Id Barang" required>
+          <input class="input" type="date" name="tanggal_kedaluwarsa">
+          <button class="btn">Edit</button>
+        </form>
       </div>
 
-      <div class="mini">
+      <div class="card">
         <div class="label">Nama Barang</div>
-        <div class="row">
-          <input type="text" placeholder="Masukan Nama Barang">
-          <button type="button" class="btn-ghost">Edit</button>
-        </div>
-        <div class="hint"><span class="dot"></span>Masukan Nama Barang yang ingin di edit</div>
+        <form method="POST" action="{{ route('barang.quickUpdate') }}" style="display:flex;gap:8px">
+          @csrf <input type="hidden" name="mode" value="change_nama">
+          <input class="input" name="target_id" placeholder="Id Barang" required>
+          <input class="input" name="nama_barang" placeholder="Nama baru" required>
+          <button class="btn">Edit</button>
+        </form>
       </div>
 
-      <div class="mini">
+      <div class="card">
         <div class="label">Stok Barang</div>
-        <div class="row">
-          <input type="text" placeholder="Masukan Stok Barang">
-          <button type="button" class="btn-ghost">Edit</button>
-        </div>
-        <div class="hint"><span class="dot"></span>Masukan Stok Barang yang ingin di edit</div>
+        <form method="POST" action="{{ route('barang.quickUpdate') }}" style="display:flex;gap:8px">
+          @csrf <input type="hidden" name="mode" value="change_stok">
+          <input class="input" name="target_id" placeholder="Id Barang" required>
+          <input class="input" type="number" min="0" name="stok_barang" placeholder="Stok baru" required>
+          <button class="btn">Edit</button>
+        </form>
       </div>
     </div>
 
-    {{-- Tabel + pagination dari DB --}}
-    <div class="tbl-card">
-      <div class="tbl-title">Table Barang</div>
-      <div style="overflow-x:auto">
+    <div class="card" style="margin-top:16px">
+      <h3 style="margin:0 0 10px;font-weight:600">Table Barang</h3>
+      <div class="tableWrap">
         <table>
-          <thead>
+          <thead><tr><th>Id Barang</th><th>Nama Barang</th><th>Tanggal Kadaluwarsa</th><th>Stok Barang</th></tr></thead>
+          <tbody id="tableBarang">
+          @forelse($barangs as $b)
             <tr>
-              <th>Id Barang</th>
-              <th>Nama Barang</th>
-              <th>Tanggal Kadaluwarsa</th>
-              <th>Stok Barang</th>
+              <td>{{ $b->id_barang }}</td>
+              <td>{{ $b->nama_barang }}</td>
+              <td>{{ optional($b->tanggal_kedaluwarsa)->format('d/m/Y') }}</td>
+              <td>{{ $b->stok_barang }}</td>
             </tr>
-          </thead>
-          <tbody>
-            @forelse(($barangs ?? []) as $b)
-              <tr>
-                <td>{{ $b->id_barang }}</td>
-                <td>{{ $b->nama_barang }}</td>
-                <td>{{ optional($b->tanggal_kedaluwarsa)->format('d/m/Y') ?? '-' }}</td>
-                <td>{{ $b->stok_barang }}</td>
-              </tr>
-            @empty
-              <tr><td colspan="4" style="text-align:center;color:#6b7280;padding:16px">Tidak ada data.</td></tr>
-            @endforelse
+          @empty
+            <tr><td colspan="4" style="text-align:center;padding:18px;color:#6b7280">Belum ada data.</td></tr>
+          @endforelse
           </tbody>
         </table>
       </div>
-
-      @isset($barangs)
-        <div class="pagination">
-          {{-- Laravel pagination default bisa dipakai.
-               Jika ingin tombol kustom seperti mockup, gunakan contoh manual berikut.
-               Ganti dengan: {{ $barangs->onEachSide(1)->links() }} jika pakai paginator bawaan. --}}
-          @php
-            $current = $barangs->currentPage();
-            $last    = $barangs->lastPage();
-          @endphp
-          <a class="page-btn icon" href="{{ $barangs->previousPageUrl() ?? '#' }}">«</a>
-          @for($i=max(1,$current-2); $i<=min($last,$current+2); $i++)
-            <a class="page-btn {{ $i==$current?'is-active':'' }}" href="{{ $barangs->url($i) }}">{{ $i }}</a>
-          @endfor
-          <a class="page-btn icon" href="{{ $barangs->nextPageUrl() ?? '#' }}">»</a>
-        </div>
-      @endisset
+      <div class="pagination">{{ $barangs->onEachSide(1)->links() }}</div>
     </div>
-  </div>
-</x-app-layout>
+  </main>
+</div>
+
+<script>
+  document.getElementById('searchBarang')?.addEventListener('keyup', function(){
+    const q = this.value.toLowerCase();
+    document.querySelectorAll('#tableBarang tr').forEach(row=>{
+      const nama = (row.cells?.[1]?.textContent || '').toLowerCase();
+      row.style.display = nama.includes(q) ? '' : 'none';
+    });
+  });
+</script>
+</body>
+</html>

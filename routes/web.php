@@ -5,92 +5,61 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PelangganAuthController;
 use App\Http\Controllers\BarangController;
-use App\Models\Barang;
+use App\Http\Controllers\LaporanController;
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-*/
+Route::view('/', 'welcome');
 
-Route::get('/', fn () => view('welcome'));
-
-/* =============================
- * DASHBOARD (STAFF SAJA)
- * ============================= */
+/* STAFF ONLY */
 Route::middleware('auth:staff')->group(function () {
-    Route::get('/dashboard', function () {
-        return view('dashboard'); // resources/views/dashboard.blade.php
-    })->name('dashboard');
+    Route::view('/dashboard', 'dashboard')->name('dashboard');
 
-    /* ============================
-     *  Halaman UI sesuai sidebar
-     * ============================ */
-    // /tambah -> form UI (pakai komponen layout sidebar)
-    Route::get('/tambah', function () {
-        $barang = new Barang(); // untuk form kosong (kalau perlu)
-        return view('barang.tambah', compact('barang')); // atau 'barang.form' kalau kamu satukan
-    })->name('ui.tambah');
+    // Halaman tambah barang sesuai desain
+    Route::get('/tambah-barang', [BarangController::class, 'create'])->name('barang.create');
+    Route::post('/tambah-barang', [BarangController::class, 'store'])->name('barang.store');
 
-    // /edit -> halaman UI seperti mockup (judul "Cari barang yang ingin di edit")
-    Route::get('/edit', function () {
-        $barangs = Barang::orderBy('nama_barang')->paginate(8);
-        return view('barang.edit', compact('barangs'));
-    })->name('ui.edit');
+    // CRUD lain
+    Route::resource('barang', BarangController::class)->except(['show','create','store']);
 
-    // /hapus -> halaman UI seperti mockup hapus
-    Route::get('/hapus', function () {
-        $barangs = Barang::orderBy('nama_barang')->paginate(8);
-        return view('barang.hapus', compact('barangs'));
-    })->name('ui.hapus');
-
-    /* ============================
-     *   Kelola Barang (CRUD DB)
-     * ============================
-     *  GET    /barang                 -> barang.index
-     *  GET    /barang/create          -> barang.create
-     *  POST   /barang                 -> barang.store
-     *  GET    /barang/{barang}/edit   -> barang.edit
-     *  PUT    /barang/{barang}        -> barang.update
-     *  DELETE /barang/{barang}        -> barang.destroy
-     *  (tanpa show)
-     */
-    Route::resource('barang', BarangController::class)
-        ->parameters(['barang' => 'barang']) // binding by 'id_barang' (lihat model)
-        ->except(['show']);
+    // Redirect link lama
+    Route::redirect('/tambah barang', '/tambah-barang'); // handle /tambah%20barang
+    Route::get('/tambah', fn() => redirect()->route('barang.create'))->name('tambah');
 });
 
-/* =============================
- * HOME (PELANGGAN / USERS SAJA)
- * ============================= */
+/* PELANGGAN */
+Route::get('/pelanggan/register', [PelangganAuthController::class, 'showRegisterForm'])
+    ->name('pelanggan.register');
+
+Route::post('/pelanggan/register', [PelangganAuthController::class, 'register'])
+    ->name('pelanggan.register.store');
+
 Route::middleware('auth:pelanggan')->group(function () {
-    Route::get('/home', function () {
-        return view('pelanggan.dashboard');
-    })->name('home');
+    Route::view('/home', 'pelanggan.dashboard')->name('home');
 });
 
-/* =============================
- * PROFIL (opsional; guard default sesuai config/auth.php)
- * ============================= */
+/* PROFILE (guard default) */
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-/* =============================
- * LOGIN / LOGOUT (AuthController)
- * ============================= */
+/* AUTH */
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login.form');
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
+// UI EDIT & HAPUS (sesuai sidebar)
+Route::get('/edit',  [\App\Http\Controllers\BarangController::class, 'editPage'])->name('ui.edit');
+Route::get('/hapus', [\App\Http\Controllers\BarangController::class, 'deletePage'])->name('ui.hapus');
 
-/* =============================
- * REGISTER PELANGGAN
- * ============================= */
-Route::get('/pelanggan/register', [PelangganAuthController::class, 'showRegisterForm'])
-    ->name('pelanggan.register');
-Route::post('/pelanggan/register', [PelangganAuthController::class, 'register'])
-    ->name('pelanggan.register.store');
+// Quick update satu kolom (ID/Nama/Tanggal/Stok)
+Route::post('/barang/quick-update', [\App\Http\Controllers\BarangController::class, 'quickUpdate'])
+    ->name('barang.quickUpdate');
 
-// require __DIR__ . '/auth.php'; // nonaktifkan jika bentrok dengan /login custom
+// Hapus per-row (resource destroy juga boleh)
+Route::delete('/barang/{barang}', [\App\Http\Controllers\BarangController::class, 'destroy'])
+    ->name('barang.destroy');
+
+Route::middleware('auth:staff')->group(function () {
+    Route::get('/laporan/barang', [LaporanController::class, 'barang'])->name('laporan.barang');
+    Route::get('/laporan/penjualan', [LaporanController::class, 'penjualan'])->name('laporan.penjualan');
+});

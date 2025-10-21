@@ -19,73 +19,65 @@ class AuthController extends Controller
     }
 
     /**
-     * Proses login untuk staff & pelanggan (gabungan).
-     * - Staff  -> redirect ke /dashboard
-     * - Pelanggan/Users -> redirect ke /home
+     * Proses login gabungan:
+     * - Staff    : email ATAU username
+     * - Pelanggan: email saja
      */
     public function login(Request $request)
     {
         $request->validate([
-            'identifier' => 'required|string',
+            'identifier' => 'required|string',   // email atau username
             'password'   => 'required|string',
+            // 'remember' => 'sometimes|boolean' // opsional kalau pakai remember me
         ]);
 
-        $identifier = $request->input('identifier');
+        $identifier = trim($request->input('identifier'));
         $password   = $request->input('password');
+        $remember   = (bool) $request->input('remember', false);
 
-        // Tentukan user & guard berdasarkan identifier (email atau username)
+        $isEmail = filter_var($identifier, FILTER_VALIDATE_EMAIL);
+
         $user  = null;
         $guard = null;
 
-        if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
-            // Jika identifier berupa email, prioritas cek ke Staff dulu
+        if ($isEmail) {
+            // 1) Coba STAFF by email
             $user  = Staff::where('email', $identifier)->first();
             $guard = $user ? 'staff' : null;
 
-            // Jika tidak ditemukan di Staff, cek ke Pelanggan
+            // 2) Kalau tidak ketemu, coba PELANGGAN by email
             if (!$user) {
                 $user  = Pelanggan::where('email', $identifier)->first();
                 $guard = $user ? 'pelanggan' : null;
             }
         } else {
-            // Jika identifier bukan email, anggap sebagai username
+            // Identifier bukan email -> anggap USERNAME tapi HANYA untuk STAFF
             $user  = Staff::where('username', $identifier)->first();
             $guard = $user ? 'staff' : null;
 
-            if (!$user) {
-                $user  = Pelanggan::where('username', $identifier)->first();
-                $guard = $user ? 'pelanggan' : null;
-            }
+            // Jangan cari 'username' di tabel pelanggan karena kolomnya tidak ada
         }
 
-        // User tidak ditemukan
         if (!$user || !$guard) {
-            return back()->withErrors([
-                'identifier' => 'Username atau Email tidak ditemukan.',
-            ])->withInput($request->only('identifier'));
+            return back()
+                ->withErrors(['identifier' => 'Username/Email tidak ditemukan.'])
+                ->onlyInput('identifier');
         }
 
         // Verifikasi password
         if (!Hash::check($password, $user->password)) {
-            return back()->withErrors([
-                'password' => 'Password salah.',
-            ])->withInput($request->only('identifier'));
+            return back()
+                ->withErrors(['password' => 'Password salah.'])
+                ->onlyInput('identifier');
         }
 
         // Login sesuai guard
-        Auth::guard($guard)->login($user);
-
-        // ===== Penting: simpan sesi login & cegah session fixation =====
+        Auth::guard($guard)->login($user, $remember);
         $request->session()->regenerate();
 
-        // Redirect sesuai peran
-        if ($guard === 'staff') {
-            // Staff menuju /dashboard (dengan intended fallback)
-            return redirect()->intended('/dashboard');
-        }
-
-        // Pelanggan / user biasa menuju /home (dengan intended fallback)
-        return redirect()->intended('/home');
+        return $guard === 'staff'
+            ? redirect()->intended('/dashboard')
+            : redirect()->intended('/home');
     }
 
     /**
@@ -101,7 +93,6 @@ class AuthController extends Controller
             Auth::guard('pelanggan')->logout();
         }
 
-        // Hancurkan sesi dan regen CSRF token
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 

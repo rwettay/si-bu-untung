@@ -16,6 +16,8 @@ class DatabaseSeeder extends Seeder
         // Panggil StaffSeeder untuk memasukkan data staff
         $this->call([
             StaffSeeder::class,
+            PelangganSeeder::class,
+            BarangSeeder::class,
         ]);
     }
 }
