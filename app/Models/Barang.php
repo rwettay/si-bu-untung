@@ -5,28 +5,21 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Barang extends Model
-{
-    use HasFactory;
-
+class Barang extends Model {
     protected $table = 'barang';
-    protected $primaryKey = 'id_barang';
-    public $incrementing = false;
-    protected $keyType = 'string';
+protected $primaryKey = 'id_barang';
+public $incrementing = false;
+protected $keyType = 'string';
+protected $fillable = [
+    'id_barang','nama_barang','stok_barang','harga_satuan',
+    'tanggal_kedaluwarsa','gambar_url','is_recommended','sold_count'
+];
 
-    protected $fillable = [
-        'id_barang',
-        'nama_barang',
-        'stok_barang',
-        'harga_satuan',
-        'tanggal_kedaluwarsa',
-        'gambar',
-    ];
 
     protected $casts = [
-        'tanggal_kedaluwarsa' => 'date',
-        'harga_satuan'        => 'decimal:2',
-        'stok_barang'         => 'integer',
+        'stok_barang'=>'integer','harga_satuan'=>'integer',
+        'is_recommended'=>'boolean','sold_count'=>'integer',
+        'tanggal_kedaluwarsa'=>'date',
     ];
 
     // Relasi contoh (opsional)

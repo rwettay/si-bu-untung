@@ -12,7 +12,7 @@ use Illuminate\Validation\ValidationException;
 class LoginRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Semua boleh akses form login.
      */
     public function authorize(): bool
     {
@@ -20,20 +20,20 @@ class LoginRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\Rule|array|string>
+     * Aturan validasi.
      */
     public function rules(): array
     {
         return [
+            // Satu field untuk email ATAU username
             'identifier' => ['required', 'string'],
-            'password' => ['required', 'string'],
+            'password'   => ['required', 'string'],
+            'remember'   => ['nullable'],
         ];
     }
 
     /**
-     * Attempt to authenticate the request's credentials.
+     * Proses autentikasi: coba guard staff dulu, jika gagal coba guard pelanggan.
      *
      * @throws \Illuminate\Validation\ValidationException
      */
@@ -41,34 +41,40 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        // Menggunakan 'identifier' untuk email atau username
-        $credentials = $this->only('identifier', 'password');
-        
-        // Cek apakah identifier adalah email atau username
-        if (filter_var($credentials['identifier'], FILTER_VALIDATE_EMAIL)) {
-            $credentials['email'] = $credentials['identifier'];
-            unset($credentials['identifier']);
-        } else {
-            $credentials['username'] = $credentials['identifier'];
-            unset($credentials['identifier']);
+        $id  = $this->input('identifier');
+        $pwd = $this->input('password');
+
+        $isEmail = filter_var($id, FILTER_VALIDATE_EMAIL);
+
+        // Susun kredensial untuk masing-masing guard
+        $staffCred = $isEmail
+            ? ['email' => $id, 'password' => $pwd]
+            : ['username' => $id, 'password' => $pwd];
+
+        $custCred = $staffCred; // sama saja (email/username + password)
+
+        // Coba STAFF dulu
+        if (Auth::guard('staff')->attempt($staffCred, $this->boolean('remember'))) {
+            RateLimiter::clear($this->throttleKey());
+            return;
         }
 
-        // Cek apakah kredensial valid
-        if (! Auth::attempt($credentials, $this->boolean('remember'))) {
-            RateLimiter::hit($this->throttleKey());
-
-            throw ValidationException::withMessages([
-                'identifier' => trans('auth.failed'),
-            ]);
+        // Lalu PELANGGAN
+        if (Auth::guard('pelanggan')->attempt($custCred, $this->boolean('remember'))) {
+            RateLimiter::clear($this->throttleKey());
+            return;
         }
 
-        RateLimiter::clear($this->throttleKey());
+        // Gagal keduanya
+        RateLimiter::hit($this->throttleKey());
+
+        throw ValidationException::withMessages([
+            'identifier' => trans('auth.failed'),
+        ]);
     }
 
     /**
-     * Ensure the login request is not rate limited.
-     *
-     * @throws \Illuminate\Validation\ValidationException
+     * Rate limit checker.
      */
     public function ensureIsNotRateLimited(): void
     {
@@ -89,10 +95,10 @@ class LoginRequest extends FormRequest
     }
 
     /**
-     * Get the rate limiting throttle key for the request.
+     * Kunci throttle berdasarkan identifier + IP.
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->input('identifier')).'|'.$this->ip());
+        return Str::transliterate(Str::lower((string) $this->input('identifier')).'|'.$this->ip());
     }
 }

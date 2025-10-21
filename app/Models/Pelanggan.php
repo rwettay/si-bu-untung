@@ -2,39 +2,39 @@
 
 namespace App\Models;
 
+use Illuminate\Foundation\Auth\User as Authenticatable; // penting
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-// (opsional biar lebih pendek pemanggilannya)
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
-class Pelanggan extends Model
+class Pelanggan extends Authenticatable
 {
-    use HasFactory;
+    use HasFactory, Notifiable;
 
     protected $table = 'pelanggan';
     protected $primaryKey = 'id_pelanggan';
+
+    // Biarkan ini kalau PK-mu string manual seperti "PLG001".
+    // Jika PK auto-increment INT, hapus dua baris ini.
     public $incrementing = false;
     protected $keyType = 'string';
 
-protected $fillable = [
-  'id_pelanggan','nama_pelanggan','alamat','no_hp','username','email','password',
-];
+    protected $fillable = [
+        'id_pelanggan','nama_pelanggan','alamat','no_hp','username','email','password',
+    ];
 
-    protected $hidden = ['password'];
+    protected $hidden = ['password','remember_token'];
 
-    // ⬇️ MUTATOR Auto-hash password — letakkan di sini (di dalam class)
-    public function setPasswordAttribute($value)
+    // Auto-hash password (dipanggil saat set atribut password)
+    public function setPasswordAttribute($value): void
     {
-        // hanya hash jika belum ter-hash
-        if (Str::startsWith($value, '$2y$')) { // bcrypt prefix
-            $this->attributes['password'] = $value;
-        } else {
-            $this->attributes['password'] = Hash::make($value);
-        }
+        $this->attributes['password'] = Str::startsWith((string)$value, '$2y$')
+            ? $value
+            : Hash::make($value);
     }
 
-    // (opsional) relasi
+    // Relasi contoh
     public function transaksi()
     {
         return $this->hasMany(Transaksi::class, 'id_pelanggan', 'id_pelanggan');
