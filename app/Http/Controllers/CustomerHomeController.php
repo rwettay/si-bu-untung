@@ -9,9 +9,9 @@ class CustomerHomeController extends Controller
 {
     public function index(Request $request)
     {
-        $q = trim($request->get('q',''));
+        $q = trim($request->get('q', ''));
 
-        // Cari berdasarkan nama_barang saja (karena tidak ada kolom 'nama')
+        // Cari berdasarkan nama_barang saja
         $base = Barang::query()
             ->when($q, function ($qb) use ($q) {
                 $qb->where('nama_barang', 'like', "%{$q}%");
@@ -24,7 +24,7 @@ class CustomerHomeController extends Controller
             ->limit(12)
             ->get();
 
-        // TERLARIS: urutkan berdasarkan sold_count (kalau sama, fallback id_barang desc)
+        // TERLARIS: urutkan berdasarkan sold_count
         $bestSellers = (clone $base)
             ->orderByDesc('sold_count')
             ->orderBy('id_barang', 'desc')
@@ -32,5 +32,31 @@ class CustomerHomeController extends Controller
             ->get();
 
         return view('customer.home', compact('q', 'recommended', 'bestSellers'));
+    }
+
+    public function search(Request $request)
+    {
+        $q = trim($request->get('q', ''));
+
+        // Cek jika query kosong
+        if (empty($q)) {
+            // Jika query kosong, kembalikan tampilan tanpa hasil
+            return view('customer.search', [
+                'q' => $q,
+                'products' => [],  // Tidak ada produk jika pencarian kosong
+            ]);
+        }
+
+        // Query barang berdasarkan pencarian, hanya produk yang tersedia
+    $products = \App\Models\Barang::search($q)  // Menggunakan scope search
+        ->where('stok_barang', '>', 0)  // Hanya yang ada stok
+        ->orderBy('nama_barang', 'asc')  // Urutkan berdasarkan nama_barang
+        ->get();
+
+        // Kembalikan view dengan data pencarian
+        return view('customer.search', [
+            'q' => $q,
+            'products' => $products,
+        ]);
     }
 }

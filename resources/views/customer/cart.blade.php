@@ -141,15 +141,17 @@
             grid-template-columns: 180px 1fr auto;
             gap: 20px;
             padding: 20px;
-            background-color: #f5f5f5;
-            border-radius: 12px;
+            background-color: #F0EEED;
+            border-radius: 20px;
             align-items: center;
-            transition: transform 0.2s, box-shadow 0.2s, opacity 0.3s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
         }
 
         .cart-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transform: translateY(-8px) scale(1.03);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+            background: #fff;
         }
 
         .item-image-wrapper {
@@ -159,11 +161,19 @@
             gap: 10px;
         }
 
-        .cart-item .product-image {
-            width: 140px;
-            height: 140px;
-            object-fit: cover;
-            border-radius: 8px;
+    .cart-item .product-image {
+    width: 100%; /* Gambar akan mengambil lebar 100% dari kontainer gambar */
+    height: auto; /* Tinggi gambar otomatis menyesuaikan dengan lebar */
+    object-fit: contain; /* Menjaga agar gambar tetap proporsional dan seluruh gambar terlihat */
+    max-width: 140px; /* Batas maksimum lebar gambar, sesuaikan dengan kebutuhan */
+    max-height: 140px; /* Batas maksimum tinggi gambar */
+    border-radius: 12px; /* Memberikan sudut yang melengkung pada gambar */
+    transition: transform 0.25s ease; /* Efek zoom saat hover */
+}
+
+
+        .cart-item:hover .product-image {
+            transform: scale(1.15);
         }
 
         .item-name {
@@ -185,32 +195,62 @@
             gap: 15px;
         }
 
-        .quantity-btn {
-            width: 36px;
-            height: 36px;
-            background-color: #ffffff;
+        .btn-circle {
+            width: 32px;
+            height: 32px;
             border: none;
-            border-radius: 50%;
+            border-radius: 10px;
+            background: #fff;
+            display: grid;
+            place-items: center;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
             padding: 0;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, .06);
+            transition: transform .18s ease, box-shadow .18s ease;
         }
 
-        .quantity-btn img {
-            width: 18px;
-            height: 18px;
+        .btn-circle::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.06);
+            border-radius: 10px;
+            transform: scale(0);
+            transition: transform .3s ease;
         }
 
-        .quantity-btn:hover:not(:disabled) {
-            background-color: #f0f0f0;
-            transform: scale(1.05);
+        .btn-circle:hover {
+            transform: translateY(-1px) scale(1.06);
+            box-shadow: 0 8px 18px rgba(0, 0, 0, .14);
         }
 
-        .quantity-btn:disabled {
-            opacity: 0.3;
+        .btn-circle:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .btn-circle:active::before {
+            transform: scale(1.8);
+        }
+
+        .btn-circle img {
+            width: 30px;
+            height: 30px;
+            display: block;
+            transition: transform .18s ease;
+        }
+
+        .btn-circle:hover img {
+            transform: translateY(-1px) scale(1.04);
+        }
+
+        .btn-circle:active img {
+            transform: translateY(0) scale(.99);
+        }
+
+        .btn-circle:disabled {
+            opacity: 0.5;
             cursor: not-allowed;
         }
 
@@ -317,6 +357,11 @@
             justify-content: space-between;
             margin-bottom: 15px;
             font-size: 16px;
+            transition: transform 0.3s ease;
+        }
+
+        .summary-row:hover {
+            transform: scale(1.02);
         }
 
         .summary-label {
@@ -324,8 +369,9 @@
         }
 
         .summary-value {
-            font-weight: 600;
-            color: #000000;
+            font-weight: 700;
+            color: #ff5722;
+            transition: transform 0.3s ease;
         }
 
         .summary-divider {
@@ -338,6 +384,11 @@
             display: flex;
             justify-content: space-between;
             margin-bottom: 25px;
+            transition: transform 0.3s ease;
+        }
+
+        .total-row:hover {
+            transform: scale(1.02);
         }
 
         .total-label {
@@ -350,6 +401,7 @@
             font-size: 18px;
             font-weight: 700;
             color: #000000;
+            transition: transform 0.3s ease;
         }
 
         .checkout-btn {
@@ -489,13 +541,14 @@
         }
 
         .modal-content {
-            background-color: white;
+            background-color: #ffffff;
             padding: 30px;
             border-radius: 12px;
             max-width: 400px;
             width: 90%;
             text-align: center;
-            animation: scaleIn 0.2s ease-out;
+            animation: scaleIn 0.3s ease-out;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
         @keyframes scaleIn {
@@ -619,8 +672,10 @@
             }
 
             .item-image-wrapper {
-                justify-self: center;
-            }
+    justify-self: center; /* Memastikan gambar terpusat */
+    max-width: 140px; /* Membatasi lebar kontainer gambar */
+    max-height: 140px; /* Membatasi tinggi kontainer gambar */
+}
 
             .item-controls {
                 justify-content: space-between;
@@ -638,7 +693,13 @@
 <body>
     <!-- Header -->
     <div class="header">
-        <div class="user-name">Muhammad Ilham</div>
+        @php
+            $u = Auth::guard('pelanggan')->user();
+            $nama = optional($u)->username ?? optional($u)->name ?? 'Sahabat';
+            $jam  = now('Asia/Jakarta')->format('H');
+            $waktu = $jam < 11 ? 'pagi' : ($jam < 15 ? 'siang' : ($jam < 18 ? 'sore' : 'malam'));
+        @endphp
+        <div class="user-name">Selamat {{ $waktu }}, {{ $nama }}!</div>
         <div class="header-icons">
             <img src="{{ asset('assets/cart-icon.svg') }}" alt="Shopping cart icon showing items in basket" class="icon" />
             <img src="{{ asset('assets/profile-icon.svg') }}" alt="User profile avatar icon in circular frame" class="icon" />
@@ -660,9 +721,10 @@
             <div class="cart-header">
                 <h2 class="cart-title">Keranjang</h2>
                 <button class="delete-all" onclick="confirmClearCart()" {{ empty($cart) || count($cart) === 0 ? 'style="display:none;"' : '' }}>
-                    <img src="{{ asset('assets/trash-icon.png') }}" alt="Trash bin icon for deleting all items" />
-                    Hapus Semua
-                </button>
+    <img src="{{ asset('assets/trash-icon.png') }}" alt="Trash bin icon for deleting all items" />
+    Hapus Semua
+</button>
+
             </div>
 
             <div class="cart-items" id="cartItems">
@@ -680,8 +742,8 @@
                         @endphp
                         @if($product)
                         <div class="cart-item"
-     data-product-id="{{ $id_barang }}"
-     data-remove-url="{{ route('cart.remove', $id_barang) }}">
+                             data-product-id="{{ $id_barang }}"
+                             data-remove-url="{{ route('cart.remove', $id_barang) }}">
                             <div class="item-image-wrapper">
                                 <img src="{{ $product->gambar_url }}" alt="Product image of {{ $product->nama_barang }} displayed in shopping cart" class="product-image" />
                                 <div class="item-name">{{ $product->nama_barang }}</div>
@@ -689,11 +751,11 @@
 
                             <div class="item-controls">
                                 <div class="item-quantity">
-                                    <button class="quantity-btn" onclick="updateQuantity('{{ $id_barang }}', -1)" aria-label="Decrease quantity of {{ $product->nama_barang }}">
-                                        <img src="{{ asset('assets/btn-minus-active.svg') }}" alt="Minus button icon for decreasing item quantity" />
+                                    <button class="btn-circle" onclick="updateQuantity('{{ $id_barang }}', -1)" aria-label="Decrease quantity of {{ $product->nama_barang }}">
+                                        <img src="{{ $qty > 1 ? asset('assets/btn-minus-active.svg') : asset('assets/btn-minus-disabled.svg') }}" alt="Minus button icon for decreasing item quantity" />
                                     </button>
                                     <span class="quantity-value" data-quantity="{{ $qty }}">{{ $qty }}</span>
-                                    <button class="quantity-btn" onclick="updateQuantity('{{ $id_barang }}', 1)" aria-label="Increase quantity of {{ $product->nama_barang }}">
+                                    <button class="btn-circle" onclick="updateQuantity('{{ $id_barang }}', 1)" aria-label="Increase quantity of {{ $product->nama_barang }}">
                                         <img src="{{ asset('assets/btn-plus.svg') }}" alt="Plus button icon for increasing item quantity" />
                                     </button>
                                 </div>
@@ -822,97 +884,101 @@
 
         // Update quantity
         async function updateQuantity(id_barang, change) {
-    const item = document.querySelector(`[data-product-id="${id_barang}"]`);
-    if (!item) return;
+            const item = document.querySelector(`[data-product-id="${id_barang}"]`);
+            if (!item) return;
 
-    const jumlahEl = item.querySelector('.quantity-value');
-    const currentJumlah = parseInt(jumlahEl.getAttribute('data-quantity'));
-    const newJumlah = currentJumlah + change;
+            const jumlahEl = item.querySelector('.quantity-value');
+            const currentJumlah = parseInt(jumlahEl.getAttribute('data-quantity'));
+            const newJumlah = currentJumlah + change;
 
-    if (newJumlah < 1) {
-        confirmRemoveItem(id_barang);
-        return;
-    }
+            if (newJumlah < 1) {
+                confirmRemoveItem(id_barang);
+                return;
+            }
 
-    item.classList.add('loading');
+            item.classList.add('loading');
 
-    try {
-const response = await fetch('/cart/update', {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': csrfToken,
-        'Accept': 'application/json'
-    },
-    body: JSON.stringify({
-        id_barang: id_barang,
-        jumlah_pesanan: newJumlah
-    })
-});
+            // Update minus button icon based on new quantity
+            const minusBtn = item.querySelector('.btn-circle:first-child img');
+            if (newJumlah === 1) {
+                minusBtn.src = '{{ asset('assets/btn-minus-disabled.svg') }}';
+            } else {
+                minusBtn.src = '{{ asset('assets/btn-minus-active.svg') }}';
+            }
 
+            try {
+                const response = await fetch('/cart/update', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id_barang: id_barang,
+                        jumlah_pesanan: newJumlah
+                    })
+                });
 
-        const data = await response.json();
-        if (data.success) {
-            jumlahEl.textContent = newJumlah;
-            jumlahEl.setAttribute('data-quantity', newJumlah);
+                const data = await response.json();
+                if (data.success) {
+                    jumlahEl.textContent = newJumlah;
+                    jumlahEl.setAttribute('data-quantity', newJumlah);
 
-            const price = parseInt(item.querySelector('.item-price').getAttribute('data-price'));
-            item.querySelector('.item-price').textContent = formatCurrency(price * newJumlah);
-            updateCartTotals();
-            showToast('Jumlah produk diperbarui', 'success');
-        } else {
-            showToast(data.message || 'Gagal memperbarui jumlah produk', 'error');
+                    const price = parseInt(item.querySelector('.item-price').getAttribute('data-price'));
+                    item.querySelector('.item-price').textContent = formatCurrency(price * newJumlah);
+                    updateCartTotals();
+                    showToast('Jumlah produk diperbarui', 'success');
+                } else {
+                    showToast(data.message || 'Gagal memperbarui jumlah produk', 'error');
+                }
+            } catch (error) {
+                console.error('Error updating jumlah_pesanan:', error);
+                showToast('Terjadi kesalahan. Silakan coba lagi.', 'error');
+            } finally {
+                item.classList.remove('loading');
+            }
         }
-    } catch (error) {
-        console.error('Error updating jumlah_pesanan:', error);
-        showToast('Terjadi kesalahan. Silakan coba lagi.', 'error');
-    } finally {
-        item.classList.remove('loading');
-    }
-}
-
 
         // Remove single item
         async function removeItem(id_barang) {
-  const item = document.querySelector(`[data-product-id="${id_barang}"]`);
-  if (!item) return;
+            const item = document.querySelector(`[data-product-id="${id_barang}"]`);
+            if (!item) return;
 
-  item.classList.add('loading'); // Menambahkan animasi loading
+            item.classList.add('loading');
 
-  try {
-const url = item.getAttribute('data-remove-url'); // URL dari Blade
+            try {
+                const url = item.getAttribute('data-remove-url');
 
-const res = await fetch(url, {
-  method: 'POST', // kirim POST...
-  headers: {
-    'X-CSRF-TOKEN': csrfToken,
-    'Accept': 'application/json',
-    'Content-Type': 'application/x-www-form-urlencoded'
-  },
-  body: new URLSearchParams({ _method: 'DELETE' }) // ... spoof DELETE untuk Laravel
-});
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({ _method: 'DELETE' })
+                });
 
+                const data = await res.json();
 
-    const data = await res.json();  // Menangani respons JSON
-
-    if (data.success) {
-      item.style.animation = 'fadeOut .3s ease-out';  // Animasi
-      setTimeout(() => {
-        item.remove();  // Hapus item dari UI
-        updateCartTotals();  // Perbarui total keranjang
-      }, 300);
-      showToast('Produk berhasil dihapus', 'success');  // Pesan sukses
-    } else {
-      showToast(data.message || 'Gagal menghapus produk', 'error');  // Pesan error
-      item.classList.remove('loading');
-    }
-  } catch (e) {
-    console.error(e);
-    showToast('Terjadi kesalahan. Coba lagi.', 'error');  // Pesan kesalahan umum
-    item.classList.remove('loading');
-  }
-}
-
+                if (data.success) {
+                    item.style.animation = 'fadeOut .3s ease-out';
+                    setTimeout(() => {
+                        item.remove();
+                        updateCartTotals();
+                    }, 300);
+                    showToast('Produk berhasil dihapus', 'success');
+                } else {
+                    showToast(data.message || 'Gagal menghapus produk', 'error');
+                    item.classList.remove('loading');
+                }
+            } catch (e) {
+                console.error(e);
+                showToast('Terjadi kesalahan. Coba lagi.', 'error');
+                item.classList.remove('loading');
+            }
+        }
 
         // Clear entire cart
         async function clearCart() {
@@ -921,12 +987,12 @@ const res = await fetch(url, {
 
             try {
                 const response = await fetch('/cart/clear', {
-    method: 'DELETE',
-    headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': csrfToken,
-        'Accept': 'application/json'
-    }
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
+                    }
                 });
 
                 const data = await response.json();

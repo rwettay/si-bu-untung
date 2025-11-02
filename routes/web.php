@@ -74,6 +74,7 @@ Route::middleware('auth:staff')->group(function () {
 /* ===================== PELANGGAN ========================= */
 Route::middleware('auth:pelanggan')->group(function () {
     Route::get('/home', [CustomerHomeController::class, 'index'])->name('customer.home');
+    Route::get('/home/search', [CustomerHomeController::class, 'search'])->name('customer.search');
 
     // CART khusus pelanggan
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
