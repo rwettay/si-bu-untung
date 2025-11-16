@@ -10,67 +10,92 @@ use App\Models\Pelanggan;
 
 class AuthController extends Controller
 {
+    /**
+     * Tampilkan halaman login.
+     */
     public function showLoginForm()
     {
-        return view('auth.login');  // Menampilkan form login
+        return view('auth.login');
     }
 
-public function login(Request $request)
-{
-    $request->validate([
-        'identifier' => 'required|string',
-        'password'   => 'required|string',
-    ]);
-
-    $identifier = $request->identifier;
-    $password   = $request->password;
-
-    // Tentukan model dan guard berdasarkan identifier (email atau username)
-    $user = null;
-    $guard = null;
-
-    // Cek apakah identifier adalah email atau username
-    if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
-        // Cari di model staff atau pelanggan berdasarkan email
-        $user = Staff::where('email', $identifier)->first();
-        $guard = 'staff'; // Menggunakan guard staff untuk admin
-    } else {
-        // Jika bukan email, cek apakah identifier adalah username untuk staff atau pelanggan
-        $user = Staff::where('username', $identifier)->first();
-        if (!$user) {
-            // Jika bukan staff, cek di model pelanggan
-            $user = Pelanggan::where('username', $identifier)->first();
-            $guard = 'pelanggan';  // Guard pelanggan untuk katalog
-        } else {
-            $guard = 'staff';  // Guard staff untuk admin
-        }
-    }
-
-    // Jika user tidak ditemukan
-    if (!$user) {
-        return back()->withErrors(['identifier' => 'Username atau Email tidak ditemukan.']);
-    }
-
-    // Cek password menggunakan Hash::check
-    if (!Hash::check($password, $user->password)) {
-        return back()->withErrors(['password' => 'Password salah.']);
-    }
-
-    // Login menggunakan guard yang sesuai (staff atau pelanggan)
-    Auth::guard($guard)->login($user);
-
-    // Redirect ke halaman yang sesuai berdasarkan guard
-    if ($guard === 'staff') {
-        return redirect()->route('filament.pages.dashboard');  // Halaman admin Filament
-    } else {
-        return redirect()->route('pelanggan.dashboard');  // Halaman katalog pelanggan
-    }
-}
-
-
-    public function logout()
+    /**
+     * Proses login gabungan untuk Staff & Pelanggan.
+     * - Staff    -> redirect ke route('dashboard')
+     * - Pelanggan-> redirect ke route('customer.home')
+     */
+    public function login(Request $request)
     {
-        Auth::logout(); // Logout user
-        return redirect('/login')->with('success', 'Berhasil logout.');
+        $validated = $request->validate([
+            'identifier' => ['required', 'string'], // email ATAU username
+            'password'   => ['required', 'string'],
+        ]);
+
+        [$user, $guard] = $this->findUserAndGuard($validated['identifier']);
+
+        if (!$user || !$guard) {
+            return back()
+                ->withErrors(['identifier' => 'Username atau Email tidak ditemukan.'])
+                ->onlyInput('identifier');
+        }
+
+        if (!Hash::check($validated['password'], $user->password)) {
+            return back()
+                ->withErrors(['password' => 'Password salah.'])
+                ->onlyInput('identifier');
+        }
+
+        Auth::guard($guard)->login($user);
+        $request->session()->regenerate(); // cegah session fixation
+
+        return $guard === 'staff'
+            ? redirect()->intended(route('dashboard'))
+            : redirect()->intended(route('customer.home'));
+    }
+
+    /**
+     * Logout untuk kedua guard (staff & pelanggan).
+     */
+    public function logout(Request $request)
+    {
+        foreach (['staff', 'pelanggan', 'web'] as $g) {
+            if (Auth::guard($g)->check()) {
+                Auth::guard($g)->logout();
+            }
+        }
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('login')->with('success', 'Berhasil logout.');
+    }
+
+    /**
+     * Helper: cari user & tentukan guard berdasarkan identifier (email/username).
+     *
+     * @return array{0: (\App\Models\Staff|\App\Models\Pelanggan|null), 1: ('staff'|'pelanggan'|null)}
+     */
+    private function findUserAndGuard(string $identifier): array
+    {
+        $isEmail = filter_var($identifier, FILTER_VALIDATE_EMAIL);
+
+        // Prioritaskan Staff terlebih dahulu
+        $user = $isEmail
+            ? Staff::where('email', $identifier)->first()
+            : Staff::where('username', $identifier)->first();
+
+        if ($user) {
+            return [$user, 'staff'];
+        }
+
+        // Lanjut cek Pelanggan
+        $user = $isEmail
+            ? Pelanggan::where('email', $identifier)->first()
+            : Pelanggan::where('username', $identifier)->first();
+
+        if ($user) {
+            return [$user, 'pelanggan'];
+        }
+
+        return [null, null];
     }
 }

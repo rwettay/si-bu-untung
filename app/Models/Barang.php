@@ -11,8 +11,11 @@ class Barang extends Model
 
     protected $table = 'barang';
     protected $primaryKey = 'id_barang';
-    public $incrementing = false;
+    public $incrementing = false;          // PK string
     protected $keyType = 'string';
+
+    // Jika tabel TIDAK punya created_at / updated_at, set false:
+    // public $timestamps = false;
 
     protected $fillable = [
         'id_barang',
@@ -20,18 +23,43 @@ class Barang extends Model
         'stok_barang',
         'harga_satuan',
         'tanggal_kedaluwarsa',
-        'gambar',
+        'gambar_url',
+        'is_recommended',
+        'sold_count',
     ];
 
     protected $casts = [
-        'tanggal_kedaluwarsa' => 'date',
-        'harga_satuan'        => 'decimal:2',
-        'stok_barang'         => 'integer',
+        'stok_barang'          => 'integer',
+        'harga_satuan'         => 'integer',
+        'is_recommended'       => 'boolean',
+        'sold_count'           => 'integer',
+        'tanggal_kedaluwarsa'  => 'date',
     ];
 
-    // Relasi contoh (opsional)
+    /** Route-model binding pakai kolom id_barang */
+    public function getRouteKeyName(): string
+    {
+        return 'id_barang';
+    }
+
+    /** Scope pencarian sederhana: Barang::search($q)->paginate() */
+    public function scopeSearch($query, ?string $q)
+    {
+        return $query->when($q, function ($qq) use ($q) {
+            $qq->where('id_barang', 'like', "%{$q}%")
+               ->orWhere('nama_barang', 'like', "%{$q}%");
+        });
+    }
+
+    /** Terima string kosong untuk tanggal -> simpan null */
+    public function setTanggalKedaluwarsaAttribute($value): void
+    {
+        $this->attributes['tanggal_kedaluwarsa'] = $value ?: null;
+    }
+
+    /** Relasi contoh (sesuaikan jika dipakai) */
     public function detailTransaksis()
     {
-        return $this->hasMany(DetailTransaksi::class, 'id_barang', 'id_barang');
+        return $this->hasMany(\App\Models\DetailTransaksi::class, 'id_barang', 'id_barang');
     }
 }

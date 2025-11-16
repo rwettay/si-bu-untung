@@ -2,39 +2,78 @@
 
 namespace App\Models;
 
+use Illuminate\Foundation\Auth\User as Authenticatable; // agar bisa dipakai untuk auth guard 'pelanggan'
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-// (opsional biar lebih pendek pemanggilannya)
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
-class Pelanggan extends Model
+class Pelanggan extends Authenticatable
 {
-    use HasFactory;
+    use HasFactory, Notifiable;
 
     protected $table = 'pelanggan';
     protected $primaryKey = 'id_pelanggan';
+
+    // PK string manual seperti "PLG000001"
     public $incrementing = false;
     protected $keyType = 'string';
 
-protected $fillable = [
-  'id_pelanggan','nama_pelanggan','alamat','no_hp','username','email','password',
-];
+    protected $fillable = [
+        // id_pelanggan tidak perlu diisi manual (akan diisi otomatis di booted)
+        'id_pelanggan',
+        'nama_pelanggan',
+        'alamat',
+        'no_hp',
+        'username',
+        'email',
+        'password',
+    ];
 
-    protected $hidden = ['password'];
+    protected $hidden = ['password', 'remember_token'];
 
-    // ⬇️ MUTATOR Auto-hash password — letakkan di sini (di dalam class)
-    public function setPasswordAttribute($value)
+    /**
+     * Mutator: otomatis hash password jika masih plaintext.
+     */
+    public function setPasswordAttribute($value): void
     {
-        // hanya hash jika belum ter-hash
-        if (Str::startsWith($value, '$2y$')) { // bcrypt prefix
-            $this->attributes['password'] = $value;
-        } else {
-            $this->attributes['password'] = Hash::make($value);
-        }
+        // Jika sudah berbentuk bcrypt ($2y$...), jangan di-hash ulang
+        $this->attributes['password'] = is_string($value) && str_starts_with($value, '$2y$')
+            ? $value
+            : Hash::make($value);
     }
 
-    // (opsional) relasi
+    /**
+     * Hook: saat creating, generate ID pelanggan "PLG + 6 digit" (PLG000001, dst).
+     * Pastikan kolom id_pelanggan VARCHAR(12) dan FK tabel anak juga VARCHAR(12).
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (self $model) {
+            if (!empty($model->id_pelanggan)) {
+                return; // hormati ID yang sudah diisi manual (jika ada)
+            }
+
+            $prefix = 'PLG';
+            $digits = 6; // hasil total panjang 3 + 6 = 9 char (cukup dalam VARCHAR(12))
+
+            // Ambil nomor terbesar yang sudah ada (SUBSTRING mulai dari char ke-4 setelah 'PLG')
+            // Catatan: untuk benar-benar aman dari race condition pada traffic tinggi,
+            // bungkus pemanggilan create() di DB::transaction(...) lalu aktifkan lockForUpdate().
+            $last = DB::table('pelanggan')
+                ->where('id_pelanggan', 'like', $prefix . '%')
+                ->selectRaw('COALESCE(MAX(CAST(SUBSTRING(id_pelanggan, 4) AS UNSIGNED)), 0) AS max_num')
+                // ->lockForUpdate() // aktifkan bila create() dipanggil dalam DB::transaction(...)
+                ->value('max_num');
+
+            $nextNumber = ((int) $last) + 1;
+            $model->id_pelanggan = $prefix . str_pad((string) $nextNumber, $digits, '0', STR_PAD_LEFT);
+        });
+    }
+
+    /**
+     * Relasi: satu pelanggan punya banyak transaksi.
+     */
     public function transaksi()
     {
         return $this->hasMany(Transaksi::class, 'id_pelanggan', 'id_pelanggan');

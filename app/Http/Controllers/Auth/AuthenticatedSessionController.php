@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
-use App\Providers\RouteServiceProvider;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,36 +12,54 @@ use Illuminate\View\View;
 class AuthenticatedSessionController extends Controller
 {
     /**
-     * Display the login view.
+     * Tampilkan halaman login (kalau masih dipakai).
      */
     public function create(): View
     {
+        // Kalau kamu pakai view custom sendiri, arahkan ke situ:
         return view('auth.login');
     }
 
     /**
-     * Handle an incoming authentication request.
+     * Tangani POST login dari Breeze.
      */
     public function store(LoginRequest $request): RedirectResponse
     {
+        // Akan mencoba guard:staff, lalu guard:pelanggan (lihat LoginRequest)
         $request->authenticate();
 
+        // Regenerate session
         $request->session()->regenerate();
 
-        return redirect()->intended(RouteServiceProvider::HOME);
+        // Redirect berdasarkan guard yang aktif
+        if (Auth::guard('staff')->check()) {
+            // ganti ke route dashboard adminmu (Filament dsb)
+            return redirect()->intended(route('dashboard'));
+            // atau: return redirect()->intended(route('filament.pages.dashboard'));
+        }
+
+        if (Auth::guard('pelanggan')->check()) {
+            return redirect()->intended(route('customer.home')); // /home
+        }
+
+        // fallback (harusnya tidak kepakai)
+        return redirect()->intended('/');
     }
 
     /**
-     * Destroy an authenticated session.
+     * Logout (bersihkan semua guard yang mungkin aktif).
      */
     public function destroy(Request $request): RedirectResponse
     {
-        Auth::guard('web')->logout();
+        foreach (['staff', 'pelanggan', 'web'] as $guard) {
+            if (Auth::guard($guard)->check()) {
+                Auth::guard($guard)->logout();
+            }
+        }
 
         $request->session()->invalidate();
-
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return redirect()->route('login');
     }
 }
