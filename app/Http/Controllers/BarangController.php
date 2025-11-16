@@ -32,7 +32,7 @@ class BarangController extends Controller
 
     public function store(Request $request)
     {
-        // Alur form lengkap (resource) – stok & harga tetap wajib
+        // Form lengkap (resource) — stok & harga wajib
         $data = $request->validate([
             'id_barang'            => ['required','string','max:20','unique:barang,id_barang'],
             'nama_barang'          => ['required','string'],
@@ -53,7 +53,7 @@ class BarangController extends Controller
 
     public function update(Request $request, Barang $barang)
     {
-        // Alur form lengkap (resource)
+        // Form lengkap (resource)
         $data = $request->validate([
             'id_barang'            => ['required','string','max:20', Rule::unique('barang','id_barang')->ignore($barang->id_barang, 'id_barang')],
             'nama_barang'          => ['required','string'],
@@ -95,26 +95,80 @@ class BarangController extends Controller
         return view('barang.edit', compact('barangs', 'q', 'selectedId'));
     }
 
-    /** Quick insert dari halaman /tambah (form cepat/minimal) */
+    /** UI Tambah cepat: tampilkan form + tabel */
+    public function quickAddPage(Request $request)
+    {
+        $q = $request->query('q');
+
+        $barangs = Barang::when($q, function ($qb) use ($q) {
+                $qb->where('id_barang', 'like', "%{$q}%")
+                   ->orWhere('nama_barang', 'like', "%{$q}%");
+            })
+            ->orderByDesc('id_barang')   // terbaru di atas
+            ->paginate(8)
+            ->withQueryString();
+
+        // Map kategori → prefix dari config/inventory.php
+        $prefixMap = config('inventory.prefix_map', []);
+
+        return view('barang.tambah', compact('barangs', 'q', 'prefixMap'));
+    }
+
+    /** Quick insert dari halaman /tambah dengan kategori + auto ID */
     public function quickStore(Request $request)
     {
-        // HANYA id & nama yang wajib; lainnya opsional
-        $data = $request->validate([
-            'id_barang'            => ['required','string','max:20','unique:barang,id_barang'],
-            'nama_barang'          => ['required','string'],
-            'stok_barang'          => ['nullable','integer','min:0'],
-            'harga_satuan'         => ['nullable','numeric','min:0'],
-            'gambar_url'           => ['nullable','string'],
-            'tanggal_kedaluwarsa'  => ['nullable','date'],
+        $prefixMap = config('inventory.prefix_map', []);
+        $pad       = (int) config('inventory.seq_pad', 3);
+
+        // Validasi: kategori harus salah satu key prefixMap
+        $validated = $request->validate([
+            'kategori'              => ['required', Rule::in(array_keys($prefixMap))],
+            'nama_barang'           => ['required','string'],
+            // opsional (boleh kosong)
+            'stok_barang'           => ['nullable','integer','min:0'],
+            'harga_satuan'          => ['nullable','numeric','min:0'],
+            'gambar_url'            => ['nullable','string'],
+            'tanggal_kedaluwarsa'   => ['nullable','date'],
         ]);
 
-        // Beri default aman untuk kolom numerik NOT NULL
-        $data['stok_barang']  = $data['stok_barang']  ?? 0;
-        $data['harga_satuan'] = $data['harga_satuan'] ?? 0;
+        // Ambil prefix dari kategori yg dipilih
+        $prefix = strtoupper($prefixMap[$validated['kategori']]);
 
-        Barang::create($data);
+        // Cari last id untuk prefix ini, lalu increment (format PREFIX + pad)
+        // Contoh: RKK001, RKK012, ...
+        $lastId = Barang::where('id_barang', 'like', $prefix.'%')
+            ->orderByDesc('id_barang')
+            ->value('id_barang');
 
-        // Kembali ke halaman tambah (mockup) dengan pesan sukses
+        $nextSeq = 1;
+        if ($lastId) {
+            $numPart = substr($lastId, strlen($prefix));
+            $numPart = preg_replace('/\D+/', '', $numPart);
+            if ($numPart !== '') {
+                $nextSeq = (int) $numPart + 1;
+            }
+        }
+
+        $newId = $prefix . str_pad((string)$nextSeq, $pad, '0', STR_PAD_LEFT);
+
+        // Default aman untuk kolom numerik
+        $stok  = $validated['stok_barang']  ?? 0;
+        $harga = $validated['harga_satuan'] ?? 0;
+
+        // Jaga-jaga kalau bentrok (race), batalkan
+        if (Barang::where('id_barang', $newId)->exists()) {
+            return back()->withErrors(['kategori' => 'Terjadi bentrok ID, silakan coba lagi.'])->withInput();
+        }
+
+        Barang::create([
+            'id_barang'            => $newId,
+            'nama_barang'          => $validated['nama_barang'],
+            'stok_barang'          => $stok,
+            'harga_satuan'         => $harga,
+            'gambar_url'           => $validated['gambar_url'] ?? null,
+            'tanggal_kedaluwarsa'  => $validated['tanggal_kedaluwarsa'] ?? null,
+        ]);
+
         return redirect()->route('ui.tambah')->with('success', 'Barang berhasil ditambahkan.');
     }
 
@@ -142,7 +196,7 @@ class BarangController extends Controller
             case 'tanggal':
                 if ($request->filled('value')) {
                     $request->validate(['value' => ['date']]);
-                    $barang->tanggal_kedaluwarsa = $request->value; // format Y-m-d dari input type=date
+                    $barang->tanggal_kedaluwarsa = $request->value; // Y-m-d
                 } else {
                     $barang->tanggal_kedaluwarsa = null;
                 }

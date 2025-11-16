@@ -92,4 +92,10 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+// Halaman tambah cepat (menampilkan tabel)
+Route::get('/tambah', [BarangController::class, 'quickAddPage'])->name('ui.tambah');
+
+// Submit form tambah cepat (punyamu sudah dipakai oleh Blade)
+Route::post('/barang/quick-store', [BarangController::class, 'quickStore'])->name('barang.quick.store');
+
 // require __DIR__ . '/auth.php'; // tetap dimatikan agar tidak bentrok dengan /login custom
