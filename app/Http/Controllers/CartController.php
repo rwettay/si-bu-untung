@@ -3,50 +3,232 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Barang;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
+use App\Models\Barang;
+use App\Models\Transaksi;
+use App\Models\DetailTransaksi;
 
 class CartController extends Controller
 {
-    public function add(Request $r): RedirectResponse
+    /**
+     * Simpan jumlah item unik ke session untuk badge keranjang.
+     */
+    private function updateCartBadge(array $cart): void
     {
-        $data = $r->validate([
-            'product_id' => ['required', 'string'],  // Gunakan 'string' karena id_barang bertipe string
-            'qty'        => ['required', 'integer', 'min:1', 'max:999'],
-        ]);
-
-        // Simpan keranjang sederhana di session
-        $cart = session('cart', []);
-        $cart[$data['product_id']] = ($cart[$data['product_id']] ?? 0) + $data['qty'];
-        session(['cart' => $cart]);
-
-        // Jika request mengharapkan JSON, balas JSON
-        if ($r->wantsJson()) {
-            return redirect()->back()->with('ok', 'Ditambahkan ke keranjang');
-        }
-
-        return redirect()->back()->with('ok', 'Ditambahkan ke keranjang');
+        // Menghitung jumlah produk unik di keranjang
+        $unique = count($cart);
+        session(['cart_unique_count' => $unique]);
     }
 
-    public function index()
+    /**
+     * Tambah item ke keranjang (pakai id_barang & jumlah_pesanan)
+     */
+    public function add(Request $request)
     {
-        // Mengambil data keranjang dari session
-        $cart = session('cart', []);
-        
-        // Mengambil produk berdasarkan ID yang ada di keranjang
-        $products = Barang::whereIn('id_barang', array_keys($cart))->get();
+        $validated = $request->validate([
+            'id_barang' => 'required|exists:barang,id_barang',
+            'jumlah_pesanan' => 'required|integer|min:1'
+        ]);
 
-        // Hitung subtotal
-        $subtotal = 0;
-        foreach ($cart as $productId => $qty) {
-            $product = $products->firstWhere('id_barang', $productId);
-            $subtotal += $product->harga_satuan * $qty;
+        $barang = Barang::where('id_barang', $request->id_barang)->firstOrFail();
+
+        $cart = session('cart', []);
+
+        // PERBAIKAN: Cek apakah item sudah ada di keranjang
+        if (isset($cart[$request->id_barang])) {
+            // Jika sudah ada, tambahkan jumlah_pesanan (bukan ganti)
+            $current = $cart[$request->id_barang];
+            $wanted = $current + $request->jumlah_pesanan;
+        } else {
+            // Jika belum ada, set ke jumlah_pesanan
+            $wanted = $request->jumlah_pesanan;
         }
 
-        // Total harga (bisa ditambahkan diskon jika ada)
+        // Validasi stok
+        if ($wanted > $barang->stok_barang) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Stok tidak cukup. Sisa stok: ' . $barang->stok_barang
+            ], 400);
+        }
+
+        // Tambahkan item ke keranjang
+        $cart[$request->id_barang] = $wanted;
+        session(['cart' => $cart]);
+
+        // Update cart badge
+        $this->updateCartBadge($cart);
+
+        return response()->json([
+            'success' => true,
+            'cart_count' => count($cart), // BENAR: Menghitung produk unik
+            'message' => 'Produk berhasil ditambahkan ke keranjang'
+        ]);
+    }
+
+    /**
+     * Update jumlah_pesanan untuk 1 item di keranjang
+     */
+    public function update(Request $request)
+    {
+        $validated = $request->validate([
+            'id_barang' => 'required|exists:barang,id_barang',
+            'jumlah_pesanan' => 'required|integer|min:1'
+        ]);
+
+        $cart = session('cart', []);
+
+        if (isset($cart[$request->id_barang])) {
+            $barang = Barang::where('id_barang', $request->id_barang)->first();
+
+            // Validasi stok
+            if ($barang && $request->jumlah_pesanan > $barang->stok_barang) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Stok tidak cukup. Sisa stok: ' . $barang->stok_barang
+                ], 400);
+            }
+
+            $cart[$request->id_barang] = $request->jumlah_pesanan;
+            session(['cart' => $cart]);
+
+            // Update jumlah barang unik di session untuk badge keranjang
+            $this->updateCartBadge($cart);
+
+            // FIX: Mengembalikan jumlah produk unik, bukan quantity item
+            return response()->json([
+                'success' => true,
+                'cart_count' => count($cart), // DIPERBAIKI: Dari $cart[$request->id_barang] ke count($cart)
+                'message' => 'Jumlah produk di keranjang diperbarui'
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Produk tidak ditemukan di keranjang'
+        ], 404);
+    }
+
+    /**
+     * Tampilkan isi keranjang
+     */
+    public function index()
+    {
+        $cart = session('cart', []);
+        $this->updateCartBadge($cart);
+
+        $products = empty($cart)
+            ? collect()
+            : Barang::whereIn('id_barang', array_keys($cart))->get();
+
+        $subtotal = 0;
+        foreach ($cart as $id_barang => $jumlah_pesanan) {
+            if ($p = $products->firstWhere('id_barang', $id_barang)) {
+                $subtotal += $p->harga_satuan * $jumlah_pesanan;
+            }
+        }
         $total = $subtotal;
 
-        // Tampilkan halaman cart dengan data keranjang dan produk
         return view('customer.cart', compact('cart', 'products', 'subtotal', 'total'));
+    }
+
+    /**
+     * Hapus satu item dari keranjang
+     */
+    public function remove(Request $request, string $id_barang)
+    {
+        $cart = session('cart', []);
+
+        if (isset($cart[$id_barang])) {
+            unset($cart[$id_barang]);
+            session(['cart' => $cart]);
+            $this->updateCartBadge($cart);
+
+            // FIX: Menambahkan cart_count ke response
+            return response()->json([
+                'success' => true,
+                'cart_count' => count($cart), // DITAMBAHKAN: Untuk update badge
+                'message' => 'Produk dihapus dari keranjang'
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Produk tidak ditemukan di keranjang'
+        ], 404);
+    }
+
+    /**
+     * Kosongkan seluruh keranjang
+     */
+    public function clear(Request $request)
+    {
+        session()->forget('cart');
+        session(['cart_unique_count' => 0]);
+
+        return response()->json([
+            'success' => true,
+            'cart_count' => 0, // KONSISTENSI: Menambahkan cart_count
+            'message' => 'Keranjang dikosongkan'
+        ]);
+    }
+
+    /**
+     * Checkout — simpan ke transaksi & detail_transaksi, kurangi stok_barang
+     */
+    public function checkout(Request $request)
+    {
+        $cart = session('cart', []);
+        if (empty($cart)) {
+            return back()->with('err', 'Keranjang masih kosong!');
+        }
+
+        try {
+            DB::transaction(function () use ($cart) {
+                $idTransaksi = 'TRX' . now()->format('YmdHis');
+                $trx = Transaksi::create([
+                    'id_transaksi' => $idTransaksi,
+                    'id_pelanggan' => auth()->user()->id_pelanggan ?? null,
+                    'total_transaksi' => 0,
+                    'tanggal_transaksi' => now()->toDateString(),
+                    'id_staff' => auth()->user()->id_staff ?? null,
+                    'status_transaksi' => 'pending',
+                ]);
+
+                $total = 0;
+                foreach ($cart as $id_barang => $jumlah_pesanan) {
+                    $barang = Barang::where('id_barang', $id_barang)->lockForUpdate()->firstOrFail();
+
+                    if ($jumlah_pesanan > $barang->stok_barang) {
+                        throw new \Exception("Stok tidak cukup untuk {$barang->nama_barang}");
+                    }
+
+                    $subtotal = $jumlah_pesanan * $barang->harga_satuan;
+
+                    DetailTransaksi::create([
+                        'id_transaksi' => $idTransaksi,
+                        'id_barang' => $id_barang,
+                        'jumlah_pesanan' => $jumlah_pesanan,
+                        'subtotal' => $subtotal,
+                    ]);
+
+                    $barang->decrement('stok_barang', $jumlah_pesanan);
+                    $total += $subtotal;
+                }
+
+                $trx->update([
+                    'total_transaksi' => $total,
+                    'status_transaksi' => 'dibayar',
+                ]);
+
+                session()->forget('cart');
+                session(['cart_unique_count' => 0]);
+            });
+
+            return redirect()->route('cart.index')->with('ok', 'Checkout berhasil!');
+        } catch (\Exception $e) {
+            return back()->with('err', 'Checkout gagal: ' . $e->getMessage());
+        }
     }
 }
