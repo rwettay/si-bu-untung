@@ -20,17 +20,24 @@ class Pelanggan extends Authenticatable
     protected $keyType = 'string';
 
     protected $fillable = [
-        // id_pelanggan tidak perlu diisi manual (akan diisi otomatis di booted)
-        'id_pelanggan',
+        'id_pelanggan',   // diisi otomatis pada booted()
         'nama_pelanggan',
         'alamat',
         'no_hp',
         'username',
         'email',
         'password',
+        'last_login_at',  // ⬅️ tambahkan agar bisa diisi saat login
     ];
 
     protected $hidden = ['password', 'remember_token'];
+
+    // ⬇️ Cast tanggal agar otomatis jadi instance Carbon saat diakses
+    protected $casts = [
+        'last_login_at' => 'datetime',
+        'created_at'    => 'datetime',
+        'updated_at'    => 'datetime',
+    ];
 
     /**
      * Mutator: otomatis hash password jika masih plaintext.
@@ -77,5 +84,13 @@ class Pelanggan extends Authenticatable
     public function transaksi()
     {
         return $this->hasMany(Transaksi::class, 'id_pelanggan', 'id_pelanggan');
+    }
+
+    /**
+     * Relasi: satu pelanggan punya banyak alamat.
+     */
+    public function alamat()
+    {
+        return $this->hasMany(AlamatPelanggan::class, 'id_pelanggan', 'id_pelanggan');
     }
 }

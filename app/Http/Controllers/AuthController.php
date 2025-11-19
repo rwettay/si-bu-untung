@@ -48,7 +48,7 @@ class AuthController extends Controller
         $request->session()->regenerate(); // cegah session fixation
 
         return $guard === 'staff'
-            ? redirect()->intended(route('dashboard'))
+            ? redirect()->intended(route('dashboard')) // Redirect ke dashboard custom
             : redirect()->intended(route('customer.home'));
     }
 

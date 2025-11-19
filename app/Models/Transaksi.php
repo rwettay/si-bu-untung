@@ -17,10 +17,16 @@ class Transaksi extends Model
     protected $fillable = [
         'id_transaksi',
         'id_pelanggan',
-        'total_transaksi',
+        'nama_penerima',
+        'telepon_penerima',
+        'alamat_pengiriman',
         'tanggal_transaksi',
+        'tanggal_pengiriman',
+        'waktu_pengiriman',
+        'total_transaksi',
         'id_staff',
         'status_transaksi',
+        'bukti_pengiriman',
     ];
 
     protected $casts = [

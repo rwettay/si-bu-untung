@@ -16,6 +16,13 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         // $schedule->command('inspire')->hourly();
+        
+        // Update recommended products setiap hari jam 2 pagi
+        // Kriteria: top performer (sold_count tinggi) + stok mencukupi + produk baru
+        $schedule->command('products:update-recommended')
+            ->dailyAt('02:00')
+            ->withoutOverlapping()
+            ->onOneServer();
     }
 
     /**
